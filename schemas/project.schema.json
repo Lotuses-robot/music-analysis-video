@@ -1,0 +1,183 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/music-analysis-video/project.schema.json",
+  "title": "MusicAnalysisVideoProject",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "meta", "sync", "timeSignature", "key", "sections", "chords", "melody"],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "description": "Bump when breaking or migrating project JSON shape.",
+      "pattern": "^[0-9]+(\\.[0-9]+){0,2}$",
+      "examples": ["1"]
+    },
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["title", "audioPath"],
+      "properties": {
+        "title": { "type": "string", "minLength": 1 },
+        "artist": { "type": "string" },
+        "audioPath": {
+          "type": "string",
+          "description": "Path to audio relative to project root or the JSON file location (choose one convention in the app)."
+        },
+        "audioStartOffsetSec": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Trim this many seconds from the start of the audio file before sync (optional)."
+        },
+        "bpmDisplayHint": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Optional UI-only hint when anchors carry the real timing."
+        }
+      }
+    },
+    "sync": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["anchors"],
+      "properties": {
+        "anchors": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["beat", "timeSec"],
+            "properties": {
+              "beat": { "type": "number", "description": "Musical beat index from project origin (float allowed)." },
+              "timeSec": {
+                "type": "number",
+                "minimum": 0,
+                "description": "Corresponding time in seconds in the (trimmed) audio timeline."
+              }
+            }
+          }
+        },
+        "extrapolation": {
+          "type": "string",
+          "enum": ["clamp", "extend"],
+          "default": "clamp",
+          "description": "Outside anchor range: clamp to endpoints or extend first/last segment slope."
+        }
+      }
+    },
+    "timeSignature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["default"],
+      "properties": {
+        "default": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["upper", "lower"],
+          "properties": {
+            "upper": { "type": "integer", "minimum": 1 },
+            "lower": { "type": "integer", "enum": [1, 2, 4, 8, 16, 32] }
+          }
+        },
+        "changes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["beat", "upper", "lower"],
+            "properties": {
+              "beat": { "type": "number" },
+              "upper": { "type": "integer", "minimum": 1 },
+              "lower": { "type": "integer", "enum": [1, 2, 4, 8, 16, 32] }
+            }
+          }
+        }
+      }
+    },
+    "key": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["default"],
+      "properties": {
+        "default": { "type": "string", "minLength": 1, "description": "e.g. Eb major, Bb minor" },
+        "changes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["beat", "key"],
+            "properties": {
+              "beat": { "type": "number" },
+              "key": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      }
+    },
+    "sections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "label", "startBeat"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "label": { "type": "string" },
+          "startBeat": { "type": "number" },
+          "endBeat": { "type": "number", "description": "Exclusive end; omit for open-ended tail." },
+          "comment": { "type": "string", "description": "Short analysis note shown in the video." }
+        }
+      }
+    },
+    "chords": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["beat", "symbol"],
+        "properties": {
+          "beat": { "type": "number" },
+          "symbol": { "type": "string", "minLength": 1, "description": "Display string, e.g. Am7, F#m7b5" }
+        }
+      }
+    },
+    "melody": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["beat", "midi"],
+        "properties": {
+          "beat": { "type": "number" },
+          "midi": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 127,
+            "description": "MIDI note number for simplified pitch contour."
+          }
+        }
+      }
+    },
+    "style": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "themeId": {
+          "type": "string",
+          "description": "Built-in: minimal-dark (default), paper-light. Unknown ids fall back to minimal-dark."
+        },
+        "primaryColor": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+        "secondaryColor": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+        "footerText": { "type": "string" }
+      }
+    },
+    "export": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "fps": { "type": "integer", "enum": [24, 25, 30, 60], "default": 30 },
+        "defaultComposition": { "type": "string", "enum": ["9:16", "16:9"], "default": "9:16" }
+      }
+    }
+  }
+}

@@ -1,0 +1,93 @@
+{
+  "schemaVersion": "1",
+  "meta": {
+    "title": "示例曲 · 主歌到副歌",
+    "artist": "演示",
+    "audioPath": "audio/demo-track.wav",
+    "audioStartOffsetSec": 0,
+    "bpmDisplayHint": 92
+  },
+  "sync": {
+    "anchors": [
+      { "beat": 0, "timeSec": 0 },
+      { "beat": 8, "timeSec": 5.15 },
+      { "beat": 16, "timeSec": 10.05 },
+      { "beat": 24, "timeSec": 14.7 },
+      { "beat": 32, "timeSec": 19.2 },
+      { "beat": 40, "timeSec": 23.5 },
+      { "beat": 48, "timeSec": 27.4 }
+    ],
+    "extrapolation": "clamp"
+  },
+  "timeSignature": {
+    "default": { "upper": 4, "lower": 4 },
+    "changes": [{ "beat": 32, "upper": 6, "lower": 8 }]
+  },
+  "key": {
+    "default": "F major",
+    "changes": [{ "beat": 32, "key": "D minor" }]
+  },
+  "sections": [
+    {
+      "id": "intro",
+      "label": "Intro",
+      "startBeat": 0,
+      "endBeat": 8,
+      "comment": "氛围铺垫，和声较淡。"
+    },
+    {
+      "id": "verse",
+      "label": "Verse A",
+      "startBeat": 8,
+      "endBeat": 32,
+      "comment": "旋律线条清晰，注意二级和弦的色彩。"
+    },
+    {
+      "id": "chorus",
+      "label": "Chorus",
+      "startBeat": 32,
+      "comment": "副歌张力上来，节奏更密；拍号在此切换为示例。"
+    }
+  ],
+  "chords": [
+    { "beat": 0, "symbol": "Fmaj7" },
+    { "beat": 4, "symbol": "Dm7" },
+    { "beat": 8, "symbol": "Bb" },
+    { "beat": 12, "symbol": "C7" },
+    { "beat": 16, "symbol": "F" },
+    { "beat": 20, "symbol": "Dm" },
+    { "beat": 24, "symbol": "Gm7" },
+    { "beat": 28, "symbol": "C7" },
+    { "beat": 32, "symbol": "Dm" },
+    { "beat": 36, "symbol": "Bb" },
+    { "beat": 40, "symbol": "F" },
+    { "beat": 44, "symbol": "C" }
+  ],
+  "melody": [
+    { "beat": 8, "midi": 65 },
+    { "beat": 9, "midi": 67 },
+    { "beat": 10, "midi": 69 },
+    { "beat": 12, "midi": 67 },
+    { "beat": 14, "midi": 65 },
+    { "beat": 16, "midi": 64 },
+    { "beat": 18, "midi": 65 },
+    { "beat": 20, "midi": 67 },
+    { "beat": 24, "midi": 69 },
+    { "beat": 28, "midi": 67 },
+    { "beat": 32, "midi": 62 },
+    { "beat": 34, "midi": 64 },
+    { "beat": 36, "midi": 65 },
+    { "beat": 40, "midi": 67 },
+    { "beat": 44, "midi": 65 }
+  ],
+  "style": {
+    "themeId": "minimal-dark",
+    "primaryColor": "#E8E8EF",
+    "secondaryColor": "#7AE7C7",
+    "footerText": "仅供音乐学习分析"
+  },
+  "export": {
+    "fps": 30,
+    "defaultComposition": "9:16"
+  }
+}

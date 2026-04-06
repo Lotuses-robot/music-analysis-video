@@ -1,0 +1,77 @@
+import type { MusicAnalysisVideoProject } from "../../src/types/project";
+
+/** Static theme recipe (no canvas size). */
+export type ThemeDefinition = {
+  id: string;
+  fontFamily: string;
+  colors: {
+    background: string;
+    text: string;
+    textMuted: string;
+    accent: string;
+    chartSurface: string;
+    sectionBackground: string;
+  };
+  layout: {
+    padRatio: number;
+    gapVertical: number;
+    gapHorizontal: number;
+    chartHeightRatioVertical: number;
+    chartHeightRatioHorizontal: number;
+    sectionBorderLeftPx: number;
+    sectionPaddingPx: number;
+    sectionRadiusPx: number;
+    chartRadiusPx: number;
+    melodyStrokePx: number;
+    playheadStrokePx: number;
+  };
+  typography: {
+    vertical: ThemeTypographyBlock;
+    horizontal: ThemeTypographyBlock;
+  };
+};
+
+export type ThemeTypographyBlock = {
+  title: number;
+  artist: number;
+  meta: number;
+  chord: number;
+  chordNext: number;
+  sectionLabel: number;
+  sectionBody: number;
+  chartCaption: number;
+  footer: number;
+};
+
+/** Fully resolved for the current composition size (px / ready-to-use styles). */
+export type ResolvedTheme = {
+  id: string;
+  fontFamily: string;
+  colors: ThemeDefinition["colors"];
+  pad: number;
+  gap: number;
+  chartHeight: number;
+  chartWidth: number;
+  layout: ThemeDefinition["layout"];
+  type: ThemeTypographyBlock;
+};
+
+export type FrameAnalysis = {
+  timeSec: number;
+  beat: number;
+  chordSymbol: string;
+  nextChordSymbol: string | null;
+  sectionLabel: string | null;
+  sectionComment: string | null;
+  keyLabel: string;
+  timeSignatureLabel: string;
+  bpmHint: number | null;
+  melodyLinePath: string;
+  playheadX: number;
+};
+
+export type AnalysisLayoutProps = {
+  project: MusicAnalysisVideoProject;
+  theme: ResolvedTheme;
+  analysis: FrameAnalysis;
+};

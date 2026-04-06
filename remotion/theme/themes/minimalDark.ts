@@ -1,0 +1,51 @@
+import type { ThemeDefinition } from "../types";
+
+export const minimalDarkTheme: ThemeDefinition = {
+  id: "minimal-dark",
+  fontFamily: "system-ui, Segoe UI, Roboto, Helvetica, sans-serif",
+  colors: {
+    background: "#111116",
+    text: "#E8E8EF",
+    textMuted: "rgba(232, 232, 239, 0.55)",
+    accent: "#7AE7C7",
+    chartSurface: "rgba(255, 255, 255, 0.06)",
+    sectionBackground: "rgba(255, 255, 255, 0.04)",
+  },
+  layout: {
+    padRatio: 0.06,
+    gapVertical: 12,
+    gapHorizontal: 16,
+    chartHeightRatioVertical: 0.14,
+    chartHeightRatioHorizontal: 0.18,
+    sectionBorderLeftPx: 4,
+    sectionPaddingPx: 12,
+    sectionRadiusPx: 8,
+    chartRadiusPx: 10,
+    melodyStrokePx: 3,
+    playheadStrokePx: 2,
+  },
+  typography: {
+    vertical: {
+      title: 26,
+      artist: 15,
+      meta: 13,
+      chord: 88,
+      chordNext: 18,
+      sectionLabel: 14,
+      sectionBody: 17,
+      chartCaption: 12,
+      footer: 12,
+    },
+    horizontal: {
+      title: 32,
+      artist: 17,
+      meta: 15,
+      chord: 112,
+      chordNext: 22,
+      sectionLabel: 16,
+      sectionBody: 20,
+      chartCaption: 12,
+      footer: 12,
+    },
+  },
+};

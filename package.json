@@ -1,0 +1,23 @@
+{
+  "name": "music-analysis-video",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "dev": "remotion studio remotion/index.ts",
+    "render:916": "remotion render remotion/index.ts Analysis916 out/analysis-916.mp4",
+    "render:169": "remotion render remotion/index.ts Analysis169 out/analysis-169.mp4",
+    "prepare-audio": "node scripts/write-silent-wav.mjs"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "^5.7.3"
+  },
+  "dependencies": {
+    "@remotion/cli": "^4.0.445",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "remotion": "^4.0.445"
+  }
+}
