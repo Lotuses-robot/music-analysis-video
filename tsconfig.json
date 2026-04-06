@@ -14,5 +14,12 @@
     "rootDir": ".",
     "types": []
   },
-  "include": ["src/**/*.ts", "remotion/**/*.tsx", "remotion/**/*.ts", "remotion.config.ts"]
+  "include": [
+    "src/**/*.ts",
+    "remotion/**/*.tsx",
+    "remotion/**/*.ts",
+    "remotion.config.ts",
+    "editor/**/*.tsx",
+    "editor/**/*.ts"
+  ]
 }

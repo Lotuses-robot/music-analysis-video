@@ -4,6 +4,8 @@
   "type": "module",
   "scripts": {
     "typecheck": "tsc --noEmit",
+    "editor:dev": "vite --config editor/vite.config.ts",
+    "editor:build": "vite build --config editor/vite.config.ts",
     "dev": "remotion studio remotion/index.ts",
     "render:916": "remotion render remotion/index.ts Analysis916 out/analysis-916.mp4",
     "render:169": "remotion render remotion/index.ts Analysis169 out/analysis-169.mp4",
@@ -12,10 +14,13 @@
   "devDependencies": {
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "typescript": "^5.7.3"
+    "@vitejs/plugin-react": "^6.0.1",
+    "typescript": "^5.7.3",
+    "vite": "^8.0.3"
   },
   "dependencies": {
     "@remotion/cli": "^4.0.445",
+    "@remotion/player": "^4.0.445",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "remotion": "^4.0.445"

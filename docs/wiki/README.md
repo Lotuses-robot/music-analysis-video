@@ -12,6 +12,7 @@
 | [Remotion 与命令](remotion-workflow.md) | Studio、导出、入口文件、Composition |
 | [目录结构](repository-layout.md) | 源码与资源路径速查 |
 | [发布到 GitHub](github.md) | 初始化仓库、`git push`、可选 `gh repo create` |
+| [Web 编辑器](editor.md) | `npm run editor:dev`、预览与 JSON 导入导出 |
 
 ## 一句话流程
 
