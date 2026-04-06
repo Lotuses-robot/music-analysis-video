@@ -68,6 +68,14 @@ export type FrameAnalysis = {
   bpmHint: number | null;
   melodyLinePath: string;
   playheadX: number;
+  barNumber: number;
+  beatInBar: number;
+  beatsPerBar: number;
+  sectionChords: {
+    symbol: string;
+    beat: number;
+    isActive: boolean;
+  }[];
 };
 
 export type AnalysisLayoutProps = {

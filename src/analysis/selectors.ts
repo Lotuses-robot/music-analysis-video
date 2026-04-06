@@ -49,3 +49,50 @@ export function timeSignatureAtBeat(project: MusicAnalysisVideoProject, beat: nu
   }
   return ts;
 }
+
+export interface BarInfo {
+  barNumber: number; // 1-indexed
+  beatInBar: number; // 1-indexed (e.g. 1.0, 2.5)
+  beatsPerBar: number;
+}
+
+/**
+ * Calculates bar and beat-in-bar given the current beat,
+ * respecting all time signature changes from the start (beat 0).
+ */
+export function getBarInfo(project: MusicAnalysisVideoProject, beat: number): BarInfo {
+  const changes = [...(project.timeSignature.changes ?? [])].sort((a, b) => a.beat - b.beat);
+
+  let currentBarStartBeat = 0;
+  let currentBarNumber = 1;
+  let currentTS = project.timeSignature.default;
+
+  // We need to iterate through changes that happened BEFORE the current beat
+  for (const change of changes) {
+    if (change.beat > beat) break;
+
+    // Calculate how many FULL bars passed in the PREVIOUS time signature
+    const beatsInThisSegment = change.beat - currentBarStartBeat;
+    const fullBarsInSegment = Math.floor(beatsInThisSegment / currentTS.upper);
+
+    // Note: Time signature changes usually happen at the start of a bar.
+    // If a change happens mid-bar in the JSON, we treat it as starting a new bar.
+    currentBarNumber += fullBarsInSegment;
+    if (beatsInThisSegment % currentTS.upper !== 0) {
+      currentBarNumber += 1; // Partial bar also counts as one bar move
+    }
+
+    currentBarStartBeat = change.beat;
+    currentTS = { upper: change.upper, lower: change.lower };
+  }
+
+  // Calculate position within the current segment
+  const beatsSinceSegmentStart = beat - currentBarStartBeat;
+  const barsInCurrentSegment = Math.floor(beatsSinceSegmentStart / currentTS.upper);
+
+  return {
+    barNumber: currentBarNumber + barsInCurrentSegment,
+    beatInBar: (beatsSinceSegmentStart % currentTS.upper) + 1,
+    beatsPerBar: currentTS.upper,
+  };
+}

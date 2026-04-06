@@ -1,0 +1,51 @@
+import type { ThemeDefinition } from "../types";
+
+export const midnightBlueTheme: ThemeDefinition = {
+  id: "midnight-blue",
+  fontFamily: "'Segoe UI', Roboto, Helvetica, sans-serif",
+  colors: {
+    background: "#0a0e1a",
+    text: "#e0e6f0",
+    textMuted: "rgba(224, 230, 240, 0.5)",
+    accent: "#4d90fe",
+    chartSurface: "rgba(77, 144, 254, 0.08)",
+    sectionBackground: "rgba(255, 255, 255, 0.03)",
+  },
+  layout: {
+    padRatio: 0.06,
+    gapVertical: 14,
+    gapHorizontal: 20,
+    chartHeightRatioVertical: 0.15,
+    chartHeightRatioHorizontal: 0.2,
+    sectionBorderLeftPx: 6,
+    sectionPaddingPx: 16,
+    sectionRadiusPx: 12,
+    chartRadiusPx: 16,
+    melodyStrokePx: 4,
+    playheadStrokePx: 3,
+  },
+  typography: {
+    vertical: {
+      title: 28,
+      artist: 16,
+      meta: 14,
+      chord: 92,
+      chordNext: 20,
+      sectionLabel: 15,
+      sectionBody: 18,
+      chartCaption: 13,
+      footer: 13,
+    },
+    horizontal: {
+      title: 36,
+      artist: 18,
+      meta: 16,
+      chord: 120,
+      chordNext: 24,
+      sectionLabel: 18,
+      sectionBody: 22,
+      chartCaption: 14,
+      footer: 14,
+    },
+  },
+};

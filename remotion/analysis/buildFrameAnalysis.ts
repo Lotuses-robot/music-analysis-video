@@ -2,6 +2,7 @@ import { getContentEndSec } from "../../src/analysis/duration";
 import {
   getActiveChord,
   getActiveSection,
+  getBarInfo,
   getBeatAtTimeSec,
   getNextChord,
   keyAtBeat,
@@ -54,6 +55,26 @@ export function buildFrameAnalysis(
   const ts = timeSignatureAtBeat(project, beat);
   const totalSec = getContentEndSec(project);
   const { lineD, playheadX } = buildMelodyGeometry(project, timeSec, totalSec, chartW, chartH);
+  const barInfo = getBarInfo(project, beat);
+
+  // Extract chords within the current section
+  const sectionChords = section
+    ? project.chords
+        .filter((c) => {
+          const end = section.endBeat ?? Number.POSITIVE_INFINITY;
+          return c.beat >= section.startBeat && c.beat < end;
+        })
+        .sort((a, b) => a.beat - b.beat)
+        .map((c) => {
+          // A chord is "active" if it's the latest one before or at current beat
+          const activeChord = getActiveChord(project, beat);
+          return {
+            symbol: c.symbol,
+            beat: c.beat,
+            isActive: activeChord?.beat === c.beat,
+          };
+        })
+    : [];
 
   return {
     timeSec,
@@ -67,5 +88,9 @@ export function buildFrameAnalysis(
     bpmHint: project.meta.bpmDisplayHint ?? null,
     melodyLinePath: lineD,
     playheadX,
+    barNumber: barInfo.barNumber,
+    beatInBar: barInfo.beatInBar,
+    beatsPerBar: barInfo.beatsPerBar,
+    sectionChords,
   };
 }

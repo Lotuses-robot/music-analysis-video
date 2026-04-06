@@ -61,6 +61,14 @@ export interface ProjectStyle {
 export interface ProjectExportDefaults {
   fps?: 24 | 25 | 30 | 60;
   defaultComposition?: "9:16" | "16:9";
+  /** Output file name base (without extension). */
+  outputName?: string;
+  /** Quality level (CRF for H.264), typically 0-51 (23 is default). */
+  crf?: number;
+  /** Audio bitrate in kbps (e.g., 128, 192, 256). */
+  audioBitrate?: number;
+  /** Pixel format (e.g., "yuv420p"). */
+  pixelFormat?: "yuv420p" | "yuv422p" | "yuv444p";
 }
 
 export interface ProjectMeta {
