@@ -68,10 +68,10 @@ export const App: FC = () => {
 
   return (
     <div className="app-shell">
-      <div className="panel">
+      <div className="sidebar">
         <h1>工程编辑</h1>
         <div className="toolbar">
-          <button type="button" className="btn btn--primary" onClick={() => setProject(structuredClone(defaultProject))}>
+          <button type="button" className="btn" onClick={() => setProject(structuredClone(defaultProject))}>
             恢复示例
           </button>
           <button type="button" className="btn" onClick={downloadJson}>
@@ -91,56 +91,57 @@ export const App: FC = () => {
             }}
           />
         </div>
-        <p className="hint">界面仅黑白灰；右侧预览成片会压成单色以便专注结构。</p>
-        
-        <div style={{ marginBottom: 20 }}>
-          <Timeline project={project} currentBeat={currentBeat} onSeek={onSeekToBeat} />
-        </div>
 
         <div
           style={{
             position: "sticky",
             top: 0,
             zIndex: 10,
-            background: "var(--bg-panel)",
-            padding: "8px 0",
+            background: "white",
+            padding: "10px 0",
             borderBottom: "1px solid var(--border)",
             marginBottom: 16,
             display: "flex",
-            alignItems: "center",
-            gap: 12,
+            flexDirection: "column",
+            gap: 4,
           }}
         >
-          <span style={{ fontSize: "0.875rem", fontWeight: "bold" }}>当前拍子: {currentBeat}</span>
-          <span style={{ fontSize: "0.875rem", color: "var(--muted)" }}>时间: {currentTime}s</span>
-          <span className="hint" style={{ margin: 0 }}>播放器同步中...</span>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={{ fontSize: "1rem", fontWeight: "bold", color: "var(--accent)" }}>Beat: {currentBeat}</span>
+            <span style={{ fontSize: "0.85rem", color: "var(--muted)" }}>{currentTime}s</span>
+          </div>
         </div>
+
         <ProjectForm project={project} onChange={setProject} currentBeat={currentBeat} currentTime={currentTime} />
       </div>
 
-      <aside className="panel panel--preview">
-        <h1>预览</h1>
-        <div className="toolbar" style={{ borderBottom: "none", paddingBottom: 0, marginBottom: "0.5rem" }}>
-          <span style={{ fontSize: "0.75rem", color: "var(--muted)", marginRight: 8 }}>比例</span>
-          <button type="button" className={`btn ${aspect === "9:16" ? "btn--primary" : ""}`} onClick={() => setAspect("9:16")}>
-            9:16
-          </button>
-          <button type="button" className={`btn ${aspect === "16:9" ? "btn--primary" : ""}`} onClick={() => setAspect("16:9")}>
-            16:9
-          </button>
-          <div style={{ flex: 1 }} />
-          <button type="button" className={`btn ${showRealColors ? "btn--primary" : ""}`} onClick={() => setShowRealColors(!showRealColors)}>
-            {showRealColors ? "✨ 主题配色" : "🌑 结构预览"}
-          </button>
+      <div className="main-view">
+        <div className="panel--preview">
+          <div className="toolbar" style={{ borderBottom: "none", width: "100%", justifyContent: "center" }}>
+            <button type="button" className={`btn ${aspect === "9:16" ? "btn--primary" : ""}`} onClick={() => setAspect("9:16")}>
+              9:16
+            </button>
+            <button type="button" className={`btn ${aspect === "16:9" ? "btn--primary" : ""}`} onClick={() => setAspect("16:9")}>
+              16:9
+            </button>
+            <div style={{ width: 20 }} />
+            <button type="button" className={`btn ${showRealColors ? "btn--primary" : ""}`} onClick={() => setShowRealColors(!showRealColors)}>
+              {showRealColors ? "✨ 主题配色" : "🌑 结构预览"}
+            </button>
+          </div>
+          <PreviewPanel 
+            key={aspect} 
+            project={previewProject} 
+            aspect={aspect} 
+            onFrameChange={onFrameChange} 
+            playerRef={playerRef}
+          />
         </div>
-        <PreviewPanel 
-          key={aspect} 
-          project={previewProject} 
-          aspect={aspect} 
-          onFrameChange={onFrameChange} 
-          playerRef={playerRef}
-        />
-      </aside>
+      </div>
+
+      <div className="timeline-area">
+        <Timeline project={project} currentBeat={currentBeat} onSeek={onSeekToBeat} />
+      </div>
     </div>
   );
 };
