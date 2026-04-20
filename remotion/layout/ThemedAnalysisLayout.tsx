@@ -5,11 +5,12 @@ import { getActiveChord } from "../../src/analysis/selectors";
 import type { AnalysisLayoutProps } from "../theme/types";
 
 /**
- *
- * @param root0
- * @param root0.project
- * @param root0.theme
- * @param root0.analysis
+ * 基于主题的分析布局组件。
+ * 负责渲染具体的视觉元素，如波形图、和弦标签、进度条等。
+ * @param props 组件属性
+ * @param props.project 项目数据
+ * @param props.theme 经过解析的主题配置
+ * @param props.analysis 当前帧的分析结果
  */
 export const ThemedAnalysisLayout: FC<AnalysisLayoutProps> = ({ project, theme, analysis }) => {
   const { colors, pad, gap, chartWidth, chartHeight, layout, type, fontFamily } = theme;

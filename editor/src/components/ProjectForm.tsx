@@ -9,12 +9,13 @@ type Props = {
 };
 
 /**
- *
- * @param root0
- * @param root0.project
- * @param root0.onChange
- * @param root0.currentBeat
- * @param root0.currentTime
+ * 项目表单组件。
+ * 用于编辑项目的元数据、同步信息、调性、样式及导出设置。
+ * @param props 组件属性
+ * @param props.project 当前项目数据
+ * @param props.onChange 项目更新回调
+ * @param props.currentBeat 当前播放拍数
+ * @param props.currentTime 当前播放时间（秒）
  */
 export const ProjectForm: FC<Props> = ({ project, onChange, currentBeat, currentTime }) => {
   const setMeta = (patch: Partial<MusicAnalysisVideoProject["meta"]>) => {
@@ -247,7 +248,7 @@ export const ProjectForm: FC<Props> = ({ project, onChange, currentBeat, current
           </div>
           <div className="field">
             <label htmlFor="fps">帧率 (FPS)</label>
-            <select value={project.export?.fps ?? 30} onChange={(e) => setExport({ fps: Number(e.target.value) as any })}>
+            <select value={project.export?.fps ?? 30} onChange={(e) => setExport({ fps: Number(e.target.value) as 24 | 25 | 30 | 60 })}>
               <option value={24}>24</option>
               <option value={25}>25</option>
               <option value={30}>30</option>

@@ -5,7 +5,8 @@ import { calculateAnalysisMetadata } from "./metadata";
 import { defaultProject } from "./defaultProject";
 
 /**
- *
+ * Remotion 项目根组件。
+ * 定义了所有的视频合成（Compositions）及其元数据计算逻辑。
  */
 export const RemotionRoot: FC = () => {
   return (

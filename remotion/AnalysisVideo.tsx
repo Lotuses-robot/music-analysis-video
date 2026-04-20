@@ -8,8 +8,8 @@ import type { AnalysisVideoProps } from "./metadata";
 
 /**
  * 核心视频组件：渲染 Remotion 视频的主入口。
- * @param root0
- * @param root0.project
+ * @param props 组件属性
+ * @param props.project 包含所有音乐分析信息的项目数据
  */
 export const AnalysisVideo: FC<AnalysisVideoProps> = ({ project }) => {
   const { width, height, fps } = useVideoConfig();
@@ -21,8 +21,8 @@ export const AnalysisVideo: FC<AnalysisVideoProps> = ({ project }) => {
       const t = resolveTheme(project, width, height);
       const a = buildFrameAnalysis(project, timeSec, t.chartWidth, t.chartHeight);
       return { theme: t, analysis: a, error: null };
-    } catch (err: any) {
-      return { theme: null, analysis: null, error: err };
+    } catch (err) {
+      return { theme: null, analysis: null, error: err as Error };
     }
   }, [project, width, height, fps, frame]);
 

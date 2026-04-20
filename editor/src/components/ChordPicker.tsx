@@ -53,11 +53,12 @@ const NOTE_TO_SEMITONE: Record<string, number> = {
 const DEGREES = ["I", "bII", "II", "bIII", "III", "IV", "#IV", "V", "bVI", "VI", "bVII", "VII"];
 
 /**
- *
- * @param root0
- * @param root0.value
- * @param root0.onChange
- * @param root0.currentKey
+ * 和弦选择器组件。
+ * 提供五度圈界面供用户选择根音、和弦类型、音程及低音。
+ * @param props 组件属性
+ * @param props.value 当前和弦值
+ * @param props.onChange 和弦变更回调
+ * @param props.currentKey 当前调性，用于自动选择升降号偏好
  */
 export const ChordPicker: FC<ChordPickerProps> = ({ value, onChange, currentKey = "C" }) => {
   const [root, setRoot] = useState("C");

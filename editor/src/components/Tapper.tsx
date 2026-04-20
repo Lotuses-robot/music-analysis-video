@@ -9,11 +9,12 @@ interface TapperProps {
 }
 
 /**
- *
- * @param root0
- * @param root0.project
- * @param root0.currentTime
- * @param root0.onUpdateSync
+ * 打拍器组件（简易版）。
+ * 允许用户通过点击按钮记录小节起始时间的锚点。
+ * @param props 组件属性
+ * @param props.project 当前项目数据
+ * @param props.currentTime 当前播放时间（秒）
+ * @param props.onUpdateSync 同步锚点更新回调
  */
 export const Tapper: FC<TapperProps> = ({ project, currentTime, onUpdateSync }) => {
   const [sessionAnchors, setSessionAnchors] = useState<SyncAnchor[]>([]);

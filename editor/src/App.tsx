@@ -17,7 +17,8 @@ import type { PlayerRef } from "@remotion/player";
 const defaultProject = exampleJson as MusicAnalysisVideoProject;
 
 /**
- *
+ * 音乐分析视频编辑器主应用组件。
+ * 提供项目配置、时间轴编辑、实时打拍和预览功能。
  */
 export const App: FC = () => {
   const [project, setProject] = useState<MusicAnalysisVideoProject>(() => structuredClone(defaultProject));

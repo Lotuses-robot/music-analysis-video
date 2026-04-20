@@ -62,6 +62,7 @@ export const Timeline: FC<TimelineProps> = ({
     fetch(url)
       .then(res => res.arrayBuffer())
       .then(buffer => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
         return ctx.decodeAudioData(buffer);
       })

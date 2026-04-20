@@ -11,10 +11,12 @@ function mergeColors(base: ThemeDefinition["colors"], project: MusicAnalysisVide
 }
 
 /**
- *
- * @param project
- * @param width
- * @param height
+ * 解析并生成当前项目的主题配置。
+ * 结合了预定义的主题定义和项目中定义的自定义样式覆盖。
+ * @param project 项目数据
+ * @param width 视频宽度
+ * @param height 视频高度
+ * @returns 包含颜色、布局间距和计算后的区域尺寸的解析后主题对象
  */
 export function resolveTheme(project: MusicAnalysisVideoProject, width: number, height: number): ResolvedTheme {
   const isVertical = height > width;

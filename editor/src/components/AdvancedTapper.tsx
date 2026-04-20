@@ -106,6 +106,7 @@ export const AdvancedTapper: FC<AdvancedTapperProps> = ({ project, onUpdateProje
 
       if (analyserRef.current && dataArrayRef.current && !audioRef.current.paused) {
         const data = dataArrayRef.current;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         analyserRef.current.getByteFrequencyData(data as any);
         const avg = data.reduce((a, b) => a + b, 0) / data.length;
         const idx = Math.floor(time * 60);
@@ -127,6 +128,7 @@ export const AdvancedTapper: FC<AdvancedTapperProps> = ({ project, onUpdateProje
     if (!audioRef.current || sourceConnectedRef.current) return;
     
     try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
       const source = audioCtx.createMediaElementSource(audioRef.current);
       const analyser = audioCtx.createAnalyser();
@@ -185,7 +187,7 @@ export const AdvancedTapper: FC<AdvancedTapperProps> = ({ project, onUpdateProje
   /**
    * 切换播放/暂停状态 (togglePlay)
    */
-  const togglePlay = async () => {
+  const togglePlay = useCallback(async () => {
     if (audioRef.current) {
       if (analyserRef.current?.context.state === "suspended") {
         await (analyserRef.current.context as AudioContext).resume();
@@ -194,7 +196,7 @@ export const AdvancedTapper: FC<AdvancedTapperProps> = ({ project, onUpdateProje
       else audioRef.current.play().catch(console.error);
       setIsPlaying(!isPlaying);
     }
-  };
+  }, [isPlaying]);
 
   /**
    * 处理实时打拍动作 (handleTap)
@@ -306,7 +308,7 @@ export const AdvancedTapper: FC<AdvancedTapperProps> = ({ project, onUpdateProje
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [handleTap, isRecording, isPlaying]);
+  }, [handleTap, isRecording, togglePlay]);
 
   /**
    * 开始一个新的打拍会话 (startSession)
@@ -341,7 +343,7 @@ export const AdvancedTapper: FC<AdvancedTapperProps> = ({ project, onUpdateProje
 
   /**
    * 处理点击时间轴跳转进度 (handleTimelineClick)
-   * @param e
+   * @param e 鼠标点击事件
    */
   const handleTimelineClick = (e: React.MouseEvent) => {
     if (!audioRef.current) return;

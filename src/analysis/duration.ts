@@ -6,8 +6,10 @@ import { flattenEvents } from "./selectors";
 export const TAIL_SEC = 2;
 
 /**
- *
- * @param project
+ * 收集项目中所有可能的“内容结束”拍数点。
+ * 包括所有同步锚点、所有事件所在的拍数以及所有小节的总长度。
+ * @param project 项目数据
+ * @returns 拍数候选值数组
  */
 export function collectBeatCandidates(project: MusicAnalysisVideoProject): number[] {
   const beats: number[] = [];
@@ -36,8 +38,9 @@ export function collectBeatCandidates(project: MusicAnalysisVideoProject): numbe
 }
 
 /**
- *
- * @param project
+ * 获取项目中最后一个有内容（锚点、事件或小节结束）的绝对拍数。
+ * @param project 项目数据
+ * @returns 最后一个内容点的绝对拍数
  */
 export function getLastContentBeat(project: MusicAnalysisVideoProject): number {
   const beats = collectBeatCandidates(project);
@@ -45,24 +48,27 @@ export function getLastContentBeat(project: MusicAnalysisVideoProject): number {
 }
 
 /**
- * Timeline length in seconds on the trimmed/synced clock (before tail).
- * @param project
+ * 获取时间轴在同步时钟下的总秒数（不包含结尾留白）。
+ * @param project 项目数据
+ * @returns 同步后的总时长（秒）
  */
 export function getSyncedEndSec(project: MusicAnalysisVideoProject): number {
   return beatToTime(getLastContentBeat(project), project.sync);
 }
 
 /**
- *
- * @param project
+ * 获取项目的完整视频总时长（包含结尾留白）。
+ * @param project 项目数据
+ * @returns 视频总时长（秒）
  */
 export function getContentEndSec(project: MusicAnalysisVideoProject): number {
   return getSyncedEndSec(project) + TAIL_SEC;
 }
 
 /**
- *
- * @param project
+ * 获取项目定义的导出帧率。
+ * @param project 项目数据
+ * @returns 帧率 (FPS)
  */
 export function getFps(project: MusicAnalysisVideoProject): number {
   return project.export?.fps ?? 30;

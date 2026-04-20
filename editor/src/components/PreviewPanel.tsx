@@ -28,8 +28,10 @@ export const PreviewPanel: FC<Props> = memo(({ project, aspect, onFrameChange, p
       onFrameChange?.(e.detail.frame);
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     current.addEventListener("frameupdate", onFrameUpdate as any);
     return () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       current.removeEventListener("frameupdate", onFrameUpdate as any);
     };
   }, [onFrameChange, playerRef]);

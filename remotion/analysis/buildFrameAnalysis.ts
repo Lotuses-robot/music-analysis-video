@@ -46,17 +46,18 @@ function buildEmotionGeometry(
 }
 
 /**
- *
- * @param project
- * @param timeSec
- * @param chartW
- * @param chartH
+ * 构建指定时间点的完整帧分析数据。
+ * @param project 项目数据
+ * @param timeSec 当前时间（秒）
+ * @param chartW 图表渲染区域宽度
+ * @param chartH 图表渲染区域高度
+ * @returns 包含当前时间点分析结果的对象
  */
 export function buildFrameAnalysis(
   project: MusicAnalysisVideoProject,
   timeSec: number,
   chartW: number,
-  chartH: number,
+  chartH: number
 ): FrameAnalysis {
   const beat = getBeatAtTimeSec(project, timeSec);
   const chord = getActiveChord(project, beat);

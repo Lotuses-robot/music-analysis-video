@@ -9,10 +9,11 @@ function extrapolationMode(sync: ProjectSync): NonNullable<ProjectSync["extrapol
 }
 
 /**
- * Map musical beat to audio time using piecewise-linear anchors.
- * Requires at least one anchor; two or more recommended for meaningful tempo shape.
- * @param beat
- * @param sync
+ * 将音乐拍数映射到音频时间（秒）。
+ * 使用分段线性插值计算。
+ * @param beat 目标拍数
+ * @param sync 同步配置（包含锚点和外推模式）
+ * @returns 对应的音频时间（秒）
  */
 export function beatToTime(beat: number, sync: ProjectSync): number {
   const mode = extrapolationMode(sync);
@@ -53,10 +54,11 @@ export function beatToTime(beat: number, sync: ProjectSync): number {
 }
 
 /**
- * Inverse of beatToTime for the same anchor set (piecewise linear).
- * If multiple beats share the same timeSec, the first matching segment wins.
- * @param timeSec
- * @param sync
+ * 将音频时间（秒）映射到音乐拍数。
+ * beatToTime 的反函数。
+ * @param timeSec 音频时间（秒）
+ * @param sync 同步配置
+ * @returns 对应的绝对拍数
  */
 export function timeToBeat(timeSec: number, sync: ProjectSync): number {
   const mode = extrapolationMode(sync);
@@ -95,10 +97,11 @@ export function timeToBeat(timeSec: number, sync: ProjectSync): number {
 }
 
 /**
- *
- * @param beat
- * @param sync
- * @param fps
+ * 将拍数映射到视频帧。
+ * @param beat 目标拍数
+ * @param sync 同步配置
+ * @param fps 视频帧率
+ * @returns 对应的视频帧号
  */
 export function beatToFrame(beat: number, sync: ProjectSync, fps: number): number {
   return Math.round(beatToTime(beat, sync) * fps);

@@ -6,18 +6,20 @@ import type {
 import { timeToBeat } from "../sync/beatTime";
 
 /**
- *
- * @param project
- * @param timeSec
+ * 获取指定时间点（秒）对应的绝对拍数。
+ * @param project 项目数据
+ * @param timeSec 时间（秒）
+ * @returns 绝对拍数
  */
 export function getBeatAtTimeSec(project: MusicAnalysisVideoProject, timeSec: number): number {
   return timeToBeat(timeSec, project.sync);
 }
 
 /**
- * Helper to convert measure-based data into a flat stream of absolute-beat events.
- * @param project
- * @param filter
+ * 将基于小节的数据转换为平坦的绝对拍数事件流。
+ * @param project 项目数据
+ * @param filter 事件过滤器函数
+ * @returns 包含拍数、事件内容及索引信息的数组
  */
 export function flattenEvents(
   project: MusicAnalysisVideoProject,
@@ -41,9 +43,10 @@ export function flattenEvents(
 }
 
 /**
- *
- * @param project
- * @param beat
+ * 获取当前拍数下的活动和弦。
+ * @param project 项目数据
+ * @param beat 当前绝对拍数
+ * @returns 包含和弦符号和起始拍数的对象，若无则返回 undefined
  */
 export function getActiveChord(project: MusicAnalysisVideoProject, beat: number): { symbol: string; beat: number } | undefined {
   const chords = flattenEvents(project, (e) => e.type === "chord");
@@ -57,9 +60,10 @@ export function getActiveChord(project: MusicAnalysisVideoProject, beat: number)
 }
 
 /**
- *
- * @param project
- * @param beat
+ * 获取下一个即将到来的和弦。
+ * @param project 项目数据
+ * @param beat 当前绝对拍数
+ * @returns 包含和弦符号和起始拍数的对象，若无则返回 undefined
  */
 export function getNextChord(project: MusicAnalysisVideoProject, beat: number): { symbol: string; beat: number } | undefined {
   const chords = flattenEvents(project, (e) => e.type === "chord");
@@ -68,9 +72,10 @@ export function getNextChord(project: MusicAnalysisVideoProject, beat: number): 
 }
 
 /**
- *
- * @param project
- * @param beat
+ * 获取当前拍数下的活动段落（Section）。
+ * @param project 项目数据
+ * @param beat 当前绝对拍数
+ * @returns 包含段落 ID、标签、起止拍数的对象
  */
 export function getActiveSection(project: MusicAnalysisVideoProject, beat: number): { id: string; label: string; startBeat: number; endBeat?: number } | undefined {
   if (!project.measures) return undefined;
@@ -96,9 +101,10 @@ export function getActiveSection(project: MusicAnalysisVideoProject, beat: numbe
 }
 
 /**
- *
- * @param project
- * @param beat
+ * 获取当前拍数下的活动注释。
+ * @param project 项目数据
+ * @param beat 当前绝对拍数
+ * @returns 活动注释事件，若无则返回 undefined
  */
 export function getActiveComment(project: MusicAnalysisVideoProject, beat: number): MeasureEvent | undefined {
   const comments = flattenEvents(project, (e) => e.type === "comment");
@@ -112,9 +118,10 @@ export function getActiveComment(project: MusicAnalysisVideoProject, beat: numbe
 }
 
 /**
- *
- * @param project
- * @param beat
+ * 获取当前拍数下的调性（Key）。
+ * @param project 项目数据
+ * @param beat 当前绝对拍数
+ * @returns 调性字符串（已去除小调标记等）
  */
 export function keyAtBeat(project: MusicAnalysisVideoProject, beat: number): string {
   let currentKey = project.key.default;
@@ -129,9 +136,10 @@ export function keyAtBeat(project: MusicAnalysisVideoProject, beat: number): str
 }
 
 /**
- *
- * @param project
- * @param beat
+ * 获取当前拍数下的拍号（Time Signature）。
+ * @param project 项目数据
+ * @param beat 当前绝对拍数
+ * @returns 拍号对象
  */
 export function timeSignatureAtBeat(project: MusicAnalysisVideoProject, beat: number): TimeSignature {
   if (!project.measures || project.measures.length === 0) {
@@ -156,9 +164,10 @@ export interface BarInfo {
 }
 
 /**
- *
- * @param project
- * @param beat
+ * 获取当前拍数对应的详细小节信息（小节号、拍位等）。
+ * @param project 项目数据
+ * @param beat 当前绝对拍数
+ * @returns 包含小节号、小节内拍位和每小节拍数的对象
  */
 export function getBarInfo(project: MusicAnalysisVideoProject, beat: number): BarInfo {
   if (!project.measures || project.measures.length === 0) {
