@@ -1,5 +1,5 @@
 import type { FC } from "react";
-import type { MusicAnalysisVideoProject, SyncExtrapolation } from "../../../src/types/project";
+import type { MusicAnalysisVideoProject, SyncExtrapolation, ProjectMeasure } from "../../../src/types/project";
 
 type Props = {
   project: MusicAnalysisVideoProject;
@@ -8,6 +8,14 @@ type Props = {
   currentTime: number;
 };
 
+/**
+ *
+ * @param root0
+ * @param root0.project
+ * @param root0.onChange
+ * @param root0.currentBeat
+ * @param root0.currentTime
+ */
 export const ProjectForm: FC<Props> = ({ project, onChange, currentBeat, currentTime }) => {
   const setMeta = (patch: Partial<MusicAnalysisVideoProject["meta"]>) => {
     onChange({ ...project, meta: { ...project.meta, ...patch } });
@@ -15,13 +23,6 @@ export const ProjectForm: FC<Props> = ({ project, onChange, currentBeat, current
 
   const setSync = (patch: Partial<MusicAnalysisVideoProject["sync"]>) => {
     onChange({ ...project, sync: { ...project.sync, ...patch } });
-  };
-
-  const setTs = (patch: Partial<MusicAnalysisVideoProject["timeSignature"]["default"]>) => {
-    onChange({
-      ...project,
-      timeSignature: { ...project.timeSignature, default: { ...project.timeSignature.default, ...patch } },
-    });
   };
 
   const setKeyDefault = (key: string) => {
@@ -34,6 +35,30 @@ export const ProjectForm: FC<Props> = ({ project, onChange, currentBeat, current
 
   const setExport = (patch: Partial<NonNullable<MusicAnalysisVideoProject["export"]>>) => {
     onChange({ ...project, export: { ...(project.export ?? {}), ...patch } });
+  };
+
+  const addMeasure = () => {
+    const measures = project.measures || [];
+    const lastMeasure = measures[measures.length - 1];
+    const newMeasure: ProjectMeasure = {
+      index: measures.length + 1,
+      timeSignature: lastMeasure ? { ...lastMeasure.timeSignature } : { upper: 4, lower: 4 },
+      events: [],
+    };
+    onChange({ ...project, measures: [...measures, newMeasure] });
+  };
+
+  const updateMeasure = (index: number, patch: Partial<ProjectMeasure>) => {
+    const measures = project.measures || [];
+    const next = [...measures];
+    next[index] = { ...next[index], ...patch };
+    onChange({ ...project, measures: next });
+  };
+
+  const removeMeasure = (index: number) => {
+    const measures = project.measures || [];
+    const next = measures.filter((_, i) => i !== index).map((m, i) => ({ ...m, index: i + 1 }));
+    onChange({ ...project, measures: next });
   };
 
   return (
@@ -80,140 +105,40 @@ export const ProjectForm: FC<Props> = ({ project, onChange, currentBeat, current
               }}
             />
           </div>
-        </div>
-      </details>
-
-      <details>
-        <summary>拍号 / 调号</summary>
-        <div className="section-content">
           <div className="field">
-            <label>默认拍号</label>
-            <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
-              <input
-                type="number"
-                min={1}
-                value={project.timeSignature.default.upper}
-                onChange={(e) => setTs({ upper: Number(e.target.value) || 4 })}
-              />
-              <span>/</span>
-              <input
-                type="number"
-                min={1}
-                value={project.timeSignature.default.lower}
-                onChange={(e) => setTs({ lower: Number(e.target.value) || 4 })}
-              />
+            <label>默认调式</label>
+            <div style={{ display: "flex", gap: 10 }}>
+              <select 
+                value={project.key.default.replace(/m$/, "")}
+                onChange={(e) => {
+                  const isMinor = project.key.default.endsWith("m");
+                  setKeyDefault(e.target.value + (isMinor ? "m" : ""));
+                }}
+              >
+                {["C", "G", "D", "A", "E", "B", "F#", "C#", "G#", "D#", "A#", "F", "Gb", "Db", "Ab", "Eb", "Bb"].map(r => <option key={r} value={r}>{r}</option>)}
+              </select>
+              <select 
+                value={project.key.default.endsWith("m") ? "m" : ""}
+                onChange={(e) => {
+                  const root = project.key.default.replace(/m$/, "");
+                  setKeyDefault(root + e.target.value);
+                }}
+              >
+                <option value="">Major (大调)</option>
+                <option value="m">Minor (小调)</option>
+              </select>
             </div>
           </div>
-          <div className="field">
-            <label htmlFor="keydef">默认调号</label>
-            <input id="keydef" value={project.key.default} onChange={(e) => setKeyDefault(e.target.value)} />
-          </div>
-
-          <h3>拍号变更</h3>
-          <div className="table-wrap">
-            <table>
-              <tbody>
-                {(project.timeSignature.changes ?? []).map((ch, i) => (
-                  <tr key={`ts-${i}`}>
-                    <td>
-                      <div style={{ display: "flex", gap: 2 }}>
-                        <input
-                          type="number"
-                          step={0.01}
-                          value={ch.beat}
-                          style={{ width: 60 }}
-                          onChange={(e) => {
-                            const next = [...(project.timeSignature.changes ?? [])];
-                            next[i] = { ...ch, beat: Number(e.target.value) };
-                            onChange({ ...project, timeSignature: { ...project.timeSignature, changes: next } });
-                          }}
-                        />
-                        <button className="btn btn--small" onClick={() => {
-                          const next = [...(project.timeSignature.changes ?? [])];
-                          next[i] = { ...ch, beat: currentBeat };
-                          onChange({ ...project, timeSignature: { ...project.timeSignature, changes: next } });
-                        }}>📍</button>
-                      </div>
-                    </td>
-                    <td>
-                      <div style={{ display: "flex", gap: 2, alignItems: "center" }}>
-                        <input type="number" value={ch.upper} style={{ width: 35 }} onChange={(e) => {
-                          const next = [...(project.timeSignature.changes ?? [])];
-                          next[i] = { ...ch, upper: Number(e.target.value) || 4 };
-                          onChange({ ...project, timeSignature: { ...project.timeSignature, changes: next } });
-                        }} />
-                        <span>/</span>
-                        <input type="number" value={ch.lower} style={{ width: 35 }} onChange={(e) => {
-                          const next = [...(project.timeSignature.changes ?? [])];
-                          next[i] = { ...ch, lower: Number(e.target.value) || 4 };
-                          onChange({ ...project, timeSignature: { ...project.timeSignature, changes: next } });
-                        }} />
-                      </div>
-                    </td>
-                    <td>
-                      <button className="btn btn--small" onClick={() => {
-                        const next = (project.timeSignature.changes ?? []).filter((_, j) => j !== i);
-                        onChange({ ...project, timeSignature: { ...project.timeSignature, changes: next } });
-                      }}>×</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <button className="btn btn--full" style={{ marginTop: 8 }} onClick={() => {
-            const next = [...(project.timeSignature.changes ?? []), { beat: currentBeat, upper: 4, lower: 4 }];
-            onChange({ ...project, timeSignature: { ...project.timeSignature, changes: next } });
-          }}>添加拍号变更</button>
-
-          <h3>调号变更</h3>
-          <div className="table-wrap">
-            <table>
-              <tbody>
-                {(project.key.changes ?? []).map((ch, i) => (
-                  <tr key={`key-${i}`}>
-                    <td>
-                      <div style={{ display: "flex", gap: 2 }}>
-                        <input type="number" step={0.01} value={ch.beat} style={{ width: 60 }} onChange={(e) => {
-                          const next = [...(project.key.changes ?? [])];
-                          next[i] = { ...ch, beat: Number(e.target.value) };
-                          onChange({ ...project, key: { ...project.key, changes: next } });
-                        }} />
-                        <button className="btn btn--small" onClick={() => {
-                          const next = [...(project.key.changes ?? [])];
-                          next[i] = { ...ch, beat: currentBeat };
-                          onChange({ ...project, key: { ...project.key, changes: next } });
-                        }}>📍</button>
-                      </div>
-                    </td>
-                    <td>
-                      <input value={ch.key} onChange={(e) => {
-                        const next = [...(project.key.changes ?? [])];
-                        next[i] = { ...ch, key: e.target.value };
-                        onChange({ ...project, key: { ...project.key, changes: next } });
-                      }} />
-                    </td>
-                    <td>
-                      <button className="btn btn--small" onClick={() => {
-                        const next = (project.key.changes ?? []).filter((_, j) => j !== i);
-                        onChange({ ...project, key: { ...project.key, changes: next } });
-                      }}>×</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <button className="btn btn--full" style={{ marginTop: 8 }} onClick={() => {
-            const next = [...(project.key.changes ?? []), { beat: currentBeat, key: "C major" }];
-            onChange({ ...project, key: { ...project.key, changes: next } });
-          }}>添加调号变更</button>
         </div>
       </details>
 
       <details>
-        <summary>同步锚点</summary>
+        <summary>调号与同步</summary>
         <div className="section-content">
+          <div className="field">
+            <label htmlFor="keydef">初始调号</label>
+            <input id="keydef" value={project.key.default} onChange={(e) => setKeyDefault(e.target.value)} />
+          </div>
           <div className="field">
             <label>外推策略</label>
             <select value={project.sync.extrapolation ?? "clamp"} onChange={(e) => setSync({ extrapolation: e.target.value as SyncExtrapolation })}>
@@ -221,6 +146,7 @@ export const ProjectForm: FC<Props> = ({ project, onChange, currentBeat, current
               <option value="extend">extend (延伸斜率)</option>
             </select>
           </div>
+          <h3>同步锚点</h3>
           <div className="table-wrap">
             <table>
               <thead>
@@ -240,31 +166,21 @@ export const ProjectForm: FC<Props> = ({ project, onChange, currentBeat, current
                           next[i] = { ...row, beat: Number(e.target.value) };
                           onChange({ ...project, sync: { ...project.sync, anchors: next } });
                         }} />
-                        <button className="btn btn--small" onClick={() => {
-                          const next = [...project.sync.anchors];
-                          next[i] = { ...row, beat: currentBeat };
-                          onChange({ ...project, sync: { ...project.sync, anchors: next } });
-                        }}>📍</button>
                       </div>
                     </td>
                     <td>
                       <div style={{ display: "flex", gap: 2 }}>
-                        <input type="number" step={0.001} value={row.timeSec} style={{ width: 70 }} onChange={(e) => {
+                        <input type="number" step={0.01} value={row.timeSec} style={{ width: 60 }} onChange={(e) => {
                           const next = [...project.sync.anchors];
                           next[i] = { ...row, timeSec: Number(e.target.value) };
                           onChange({ ...project, sync: { ...project.sync, anchors: next } });
                         }} />
-                        <button className="btn btn--small" onClick={() => {
-                          const next = [...project.sync.anchors];
-                          next[i] = { ...row, timeSec: currentTime };
-                          onChange({ ...project, sync: { ...project.sync, anchors: next } });
-                        }}>🕒</button>
                       </div>
                     </td>
                     <td>
                       <button className="btn btn--small" onClick={() => {
                         const next = project.sync.anchors.filter((_, j) => j !== i);
-                        onChange({ ...project, sync: { ...project.sync, anchors: next.length ? next : [{ beat: 0, timeSec: 0 }] } });
+                        onChange({ ...project, sync: { ...project.sync, anchors: next } });
                       }}>×</button>
                     </td>
                   </tr>
@@ -272,108 +188,49 @@ export const ProjectForm: FC<Props> = ({ project, onChange, currentBeat, current
               </tbody>
             </table>
           </div>
-          <button className="btn btn--full" style={{ marginTop: 8 }} onClick={() =>
-            onChange({ ...project, sync: { ...project.sync, anchors: [...project.sync.anchors, { beat: currentBeat, timeSec: currentTime }] } })
-          }>添加同步锚点 (当前)</button>
+          <button className="btn btn--full" style={{ marginTop: 8 }} onClick={() => {
+            const next = [...project.sync.anchors, { beat: currentBeat, timeSec: currentTime }];
+            onChange({ ...project, sync: { ...project.sync, anchors: next.sort((a,b) => a.beat - b.beat) } });
+          }}>添加锚点</button>
         </div>
       </details>
 
-      <details open>
-        <summary>和弦与结构</summary>
+      <details>
+        <summary>小节管理 ({(project.measures || []).length})</summary>
         <div className="section-content">
-          <h3>和弦列表</h3>
           <div className="table-wrap">
-            <table>
+            <table style={{ width: "100%" }}>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>拍号</th>
+                  <th></th>
+                </tr>
+              </thead>
               <tbody>
-                {project.chords.map((row, i) => (
-                  <tr key={`c-${i}`}>
+                {(project.measures || []).map((m, i) => (
+                  <tr key={`m-${i}`}>
+                    <td>{m.index}</td>
                     <td>
-                      <div style={{ display: "flex", gap: 2 }}>
-                        <input type="number" step={0.01} value={row.beat} style={{ width: 60 }} onChange={(e) => {
-                          const next = [...project.chords];
-                          next[i] = { ...row, beat: Number(e.target.value) };
-                          onChange({ ...project, chords: next });
+                      <div style={{ display: "flex", gap: 2, alignItems: "center" }}>
+                        <input type="number" value={m.timeSignature.upper} style={{ width: 30 }} onChange={(e) => {
+                          updateMeasure(i, { timeSignature: { ...m.timeSignature, upper: Number(e.target.value) || 4 } });
                         }} />
-                        <button className="btn btn--small" onClick={() => {
-                          const next = [...project.chords];
-                          next[i] = { ...row, beat: currentBeat };
-                          onChange({ ...project, chords: next });
-                        }}>📍</button>
+                        <span>/</span>
+                        <input type="number" value={m.timeSignature.lower} style={{ width: 30 }} onChange={(e) => {
+                          updateMeasure(i, { timeSignature: { ...m.timeSignature, lower: Number(e.target.value) || 4 } });
+                        }} />
                       </div>
                     </td>
                     <td>
-                      <input value={row.symbol} onChange={(e) => {
-                        const next = [...project.chords];
-                        next[i] = { ...row, symbol: e.target.value };
-                        onChange({ ...project, chords: next });
-                      }} />
-                    </td>
-                    <td>
-                      <button className="btn btn--small" onClick={() => onChange({ ...project, chords: project.chords.filter((_, j) => j !== i) })}>×</button>
+                      <button className="btn btn--small" onClick={() => removeMeasure(i)}>×</button>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          <button className="btn btn--full" style={{ marginTop: 8 }} onClick={() => onChange({ ...project, chords: [...project.chords, { beat: currentBeat, symbol: "?" }] })}>
-            在当前拍添加和弦
-          </button>
-
-          <h3>段落分块</h3>
-          {project.sections.map((row, i) => (
-            <div key={`s-${row.id}-${i}`} className="section-item-card">
-              <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-                <input placeholder="Label" value={row.label} style={{ flex: 2, fontWeight: "bold" }} onChange={(e) => {
-                  const next = [...project.sections];
-                  next[i] = { ...row, label: e.target.value };
-                  onChange({ ...project, sections: next });
-                }} />
-                <button className="btn btn--small btn--danger" onClick={() => onChange({ ...project, sections: project.sections.filter((_, j) => j !== i) })}>删除</button>
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
-                <div className="field-inline">
-                  <label>Start Beat</label>
-                  <div style={{ display: "flex", gap: 2 }}>
-                    <input type="number" step={0.01} value={row.startBeat} onChange={(e) => {
-                      const next = [...project.sections];
-                      next[i] = { ...row, startBeat: Number(e.target.value) };
-                      onChange({ ...project, sections: next });
-                    }} />
-                    <button className="btn btn--small" onClick={() => {
-                      const next = [...project.sections];
-                      next[i] = { ...row, startBeat: currentBeat };
-                      onChange({ ...project, sections: next });
-                    }}>📍</button>
-                  </div>
-                </div>
-                <div className="field-inline">
-                  <label>End Beat</label>
-                  <div style={{ display: "flex", gap: 2 }}>
-                    <input type="number" step={0.01} value={row.endBeat ?? ""} placeholder="—" onChange={(e) => {
-                      const v = e.target.value;
-                      const next = [...project.sections];
-                      next[i] = { ...row, endBeat: v === "" ? undefined : Number(v) };
-                      onChange({ ...project, sections: next });
-                    }} />
-                    <button className="btn btn--small" onClick={() => {
-                      const next = [...project.sections];
-                      next[i] = { ...row, endBeat: currentBeat };
-                      onChange({ ...project, sections: next });
-                    }}>📍</button>
-                  </div>
-                </div>
-              </div>
-              <textarea placeholder="分析评论..." value={row.comment ?? ""} style={{ width: "100%", fontSize: 12 }} onChange={(e) => {
-                const next = [...project.sections];
-                next[i] = { ...row, comment: e.target.value || undefined };
-                onChange({ ...project, sections: next });
-              }} />
-            </div>
-          ))}
-          <button className="btn btn--full" onClick={() =>
-            onChange({ ...project, sections: [...project.sections, { id: `sec-${Date.now()}`, label: "新段落", startBeat: currentBeat, comment: "" }] })
-          }>在当前拍添加段落</button>
+          <button className="btn btn--full" style={{ marginTop: 8 }} onClick={addMeasure}>添加小节</button>
         </div>
       </details>
 
@@ -381,30 +238,21 @@ export const ProjectForm: FC<Props> = ({ project, onChange, currentBeat, current
         <summary>样式与导出</summary>
         <div className="section-content">
           <div className="field">
-            <label>主题</label>
-            <select value={project.style?.themeId ?? "minimal-dark"} onChange={(e) => setStyle({ themeId: e.target.value })}>
-              <option value="minimal-dark">Minimal Dark</option>
-              <option value="paper-light">Paper Light</option>
-              <option value="midnight-blue">Midnight Blue</option>
+            <label htmlFor="themeId">主题 ID</label>
+            <input id="themeId" value={project.style?.themeId ?? ""} onChange={(e) => setStyle({ themeId: e.target.value || undefined })} />
+          </div>
+          <div className="field">
+            <label htmlFor="pColor">主色调</label>
+            <input id="pColor" type="color" value={project.style?.primaryColor ?? "#000000"} onChange={(e) => setStyle({ primaryColor: e.target.value })} />
+          </div>
+          <div className="field">
+            <label htmlFor="fps">帧率 (FPS)</label>
+            <select value={project.export?.fps ?? 30} onChange={(e) => setExport({ fps: Number(e.target.value) as any })}>
+              <option value={24}>24</option>
+              <option value={25}>25</option>
+              <option value={30}>30</option>
+              <option value={60}>60</option>
             </select>
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            <div className="field">
-              <label>主色</label>
-              <input type="color" value={project.style?.primaryColor ?? "#E8E8EF"} onChange={(e) => setStyle({ primaryColor: e.target.value })} />
-            </div>
-            <div className="field">
-              <label>强调色</label>
-              <input type="color" value={project.style?.secondaryColor ?? "#7AE7C7"} onChange={(e) => setStyle({ secondaryColor: e.target.value })} />
-            </div>
-          </div>
-          <div className="field">
-            <label>导出文件名</label>
-            <input value={project.export?.outputName ?? ""} onChange={(e) => setExport({ outputName: e.target.value || undefined })} />
-          </div>
-          <div className="field">
-            <label>CRF 质量 ({project.export?.crf ?? 23})</label>
-            <input type="range" min={0} max={51} value={project.export?.crf ?? 23} onChange={(e) => setExport({ crf: Number(e.target.value) })} />
           </div>
         </div>
       </details>

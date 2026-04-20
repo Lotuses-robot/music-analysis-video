@@ -23,32 +23,36 @@ export interface TimeSignature {
   lower: number;
 }
 
-export interface TimeSignatureChange extends TimeSignature {
-  beat: number;
-}
-
-export interface KeyChange {
-  beat: number;
-  key: string;
+export interface MeasureEvent {
+  /** Beat offset relative to the start of this measure (0 to TS.upper). */
+  beatOffset: number;
+  /** Type of event. */
+  type: "chord" | "key_change" | "bpm_change" | "comment" | "emotion" | "section";
+  /** Value of the event (chord symbol, key string, bpm number, emotion value, etc.). */
+  value: string | number;
+  /** Visual style overrides for this event. */
+  style?: {
+    fontFamily?: string;
+    fontSize?: number;
+    color?: string;
+    bold?: boolean;
+    italic?: boolean;
+  };
 }
 
 export interface ProjectSection {
   id: string;
   label: string;
-  startBeat: number;
-  /** Exclusive; omit for open-ended. */
-  endBeat?: number;
   comment?: string;
 }
 
-export interface ChordEvent {
-  beat: number;
-  symbol: string;
-}
-
-export interface MelodyPoint {
-  beat: number;
-  midi: number;
+export interface ProjectMeasure {
+  /** 1-indexed bar number. */
+  index: number;
+  /** Musical time signature for this measure. */
+  timeSignature: TimeSignature;
+  /** Events occurring within this measure. */
+  events: MeasureEvent[];
 }
 
 export interface ProjectStyle {
@@ -84,17 +88,12 @@ export interface MusicAnalysisVideoProject {
   schemaVersion: string;
   meta: ProjectMeta;
   sync: ProjectSync;
-  timeSignature: {
-    default: TimeSignature;
-    changes?: TimeSignatureChange[];
-  };
+  /** Key/Scale used globally or as a starting point. */
   key: {
     default: string;
-    changes?: KeyChange[];
   };
-  sections: ProjectSection[];
-  chords: ChordEvent[];
-  melody: MelodyPoint[];
+  /** Measures are the primary organizational unit. */
+  measures: ProjectMeasure[];
   style?: ProjectStyle;
   export?: ProjectExportDefaults;
 }

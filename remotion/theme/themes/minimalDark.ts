@@ -19,9 +19,9 @@ export const minimalDarkTheme: ThemeDefinition = {
     chartHeightRatioHorizontal: 0.18,
     sectionBorderLeftPx: 4,
     sectionPaddingPx: 12,
-    sectionRadiusPx: 8,
-    chartRadiusPx: 10,
-    melodyStrokePx: 3,
+    sectionRadiusPx: 0,
+    chartRadiusPx: 4,
+    emotionStrokePx: 2.5,
     playheadStrokePx: 2,
   },
   typography: {

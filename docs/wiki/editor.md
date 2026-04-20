@@ -22,7 +22,7 @@ npm run editor:build
 
 ## 行为说明
 
-- **左侧**：表单编辑元信息、锚点、和弦、段落、旋律点、页脚与 fps；支持 **恢复示例**、**下载 JSON**、**打开 JSON 文件**。
+- **左侧**：表单编辑元信息、锚点、和弦、段落、情感点、页脚与 fps；支持 **恢复示例**、**下载 JSON**、**打开 JSON 文件**。
 - **右侧**：`@remotion/player` 预览；**9:16 / 16:9** 切换。预览使用 **单色压暗**（`editor/src/lib/previewProject.ts`），与编辑器黑白风格一致；正式导出仍可用 `npm run render:*` 与工程里原有主题字段。
 - **静态资源**：Vite `publicDir` 指向仓库根目录 `public/`，因此 `meta.audioPath` 仍写 `audio/xxx.wav` 即可。
 

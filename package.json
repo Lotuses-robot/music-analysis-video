@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "typecheck": "tsc --noEmit",
+    "lint": "eslint . --max-warnings 0",
     "editor:dev": "vite --config editor/vite.config.ts",
     "editor:build": "vite build --config editor/vite.config.ts",
     "dev": "remotion studio remotion/index.ts",
@@ -12,15 +13,25 @@
     "prepare-audio": "node scripts/write-silent-wav.mjs"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "@typescript-eslint/eslint-plugin": "^8.58.2",
+    "@typescript-eslint/parser": "^8.58.2",
     "@vitejs/plugin-react": "^6.0.1",
-    "typescript": "^5.7.3",
+    "eslint": "^10.2.1",
+    "eslint-plugin-jsdoc": "^62.9.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.2",
+    "globals": "^17.5.0",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.58.2",
     "vite": "^8.0.3"
   },
   "dependencies": {
     "@remotion/cli": "^4.0.445",
     "@remotion/player": "^4.0.445",
+    "caniuse-lite": "^1.0.30001787",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "remotion": "^4.0.445"

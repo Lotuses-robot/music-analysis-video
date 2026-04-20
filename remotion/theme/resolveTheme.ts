@@ -10,6 +10,12 @@ function mergeColors(base: ThemeDefinition["colors"], project: MusicAnalysisVide
   };
 }
 
+/**
+ *
+ * @param project
+ * @param width
+ * @param height
+ */
 export function resolveTheme(project: MusicAnalysisVideoProject, width: number, height: number): ResolvedTheme {
   const isVertical = height > width;
   const requested = project.style?.themeId?.trim();

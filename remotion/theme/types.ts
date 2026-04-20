@@ -22,7 +22,7 @@ export type ThemeDefinition = {
     sectionPaddingPx: number;
     sectionRadiusPx: number;
     chartRadiusPx: number;
-    melodyStrokePx: number;
+    emotionStrokePx: number;
     playheadStrokePx: number;
   };
   typography: {
@@ -63,10 +63,17 @@ export type FrameAnalysis = {
   nextChordSymbol: string | null;
   sectionLabel: string | null;
   sectionComment: string | null;
+  sectionCommentStyle?: {
+    fontFamily?: string;
+    fontSize?: number;
+    color?: string;
+    bold?: boolean;
+    italic?: boolean;
+  } | null;
   keyLabel: string;
   timeSignatureLabel: string;
   bpmHint: number | null;
-  melodyLinePath: string;
+  emotionLinePath: string;
   playheadX: number;
   barNumber: number;
   beatInBar: number;

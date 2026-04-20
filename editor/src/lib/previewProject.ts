@@ -1,6 +1,9 @@
 import type { MusicAnalysisVideoProject } from "../../../src/types/project";
 
-/** 预览用：统一为黑白灰成片（不依赖彩色主题）。 */
+/**
+ * 预览用：统一为黑白灰成片（不依赖彩色主题）。
+ * @param project
+ */
 export function toMonochromePreviewProject(project: MusicAnalysisVideoProject): MusicAnalysisVideoProject {
   return {
     ...project,

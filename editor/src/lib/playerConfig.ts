@@ -3,10 +3,18 @@ import type { MusicAnalysisVideoProject } from "../../../src/types/project";
 
 export type Aspect = "9:16" | "16:9";
 
+/**
+ *
+ * @param aspect
+ */
 export function getCompositionSize(aspect: Aspect): { width: number; height: number } {
   return aspect === "9:16" ? { width: 1080, height: 1920 } : { width: 1920, height: 1080 };
 }
 
+/**
+ *
+ * @param project
+ */
 export function getPlayerTiming(project: MusicAnalysisVideoProject): {
   fps: number;
   durationInFrames: number;

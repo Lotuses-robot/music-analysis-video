@@ -1,17 +1,24 @@
 import type { FC } from "react";
 import { spring, useCurrentFrame, useVideoConfig } from "remotion";
 import { beatToTime } from "../../src/sync/beatTime";
+import { getActiveChord } from "../../src/analysis/selectors";
 import type { AnalysisLayoutProps } from "../theme/types";
 
+/**
+ *
+ * @param root0
+ * @param root0.project
+ * @param root0.theme
+ * @param root0.analysis
+ */
 export const ThemedAnalysisLayout: FC<AnalysisLayoutProps> = ({ project, theme, analysis }) => {
   const { colors, pad, gap, chartWidth, chartHeight, layout, type, fontFamily } = theme;
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
   // Find the beat of the active chord to calculate its start frame
-  const activeChordBeat = project.chords
-    .filter((c) => c.beat <= analysis.beat)
-    .sort((a, b) => b.beat - a.beat)[0]?.beat ?? 0;
+  const activeChord = getActiveChord(project, analysis.beat);
+  const activeChordBeat = activeChord?.beat ?? 0;
 
   const chordStartSec = beatToTime(activeChordBeat, project.sync);
   const chordStartFrame = Math.floor(chordStartSec * fps);
@@ -26,33 +33,33 @@ export const ThemedAnalysisLayout: FC<AnalysisLayoutProps> = ({ project, theme, 
     <div
       style={{
         position: "absolute",
-        inset: pad,
+        inset: `${pad}px`,
         display: "flex",
         flexDirection: "column",
-        gap,
+        gap: `${gap}px`,
         fontFamily,
         color: colors.text,
       }}
     >
-      <header style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16 }}>
+      <header style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "16px" }}>
         <div>
-          <div style={{ fontSize: type.title, fontWeight: 700, letterSpacing: "-0.02em" }}>{project.meta.title}</div>
+          <div style={{ fontSize: `${type.title}px`, fontWeight: 700, letterSpacing: "-0.02em" }}>{project.meta.title}</div>
           {project.meta.artist ? (
-            <div style={{ fontSize: type.artist, color: colors.textMuted, marginTop: 4 }}>{project.meta.artist}</div>
+            <div style={{ fontSize: `${type.artist}px`, color: colors.textMuted, marginTop: "4px" }}>{project.meta.artist}</div>
           ) : null}
         </div>
-        <div style={{ textAlign: "right", fontSize: type.meta, color: colors.textMuted, lineHeight: 1.5 }}>
+        <div style={{ textAlign: "right", fontSize: `${type.meta}px`, color: colors.textMuted, lineHeight: 1.5 }}>
           <div>{analysis.timeSignatureLabel}</div>
           <div>{analysis.keyLabel}</div>
           {analysis.bpmHint !== null ? <div>~{analysis.bpmHint} BPM</div> : null}
         </div>
       </header>
 
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", gap: 24 }}>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 16 }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", gap: "24px" }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: "16px" }}>
           <div
             style={{
-              fontSize: type.chord,
+              fontSize: `${type.chord}px`,
               fontWeight: 900,
               letterSpacing: "-0.04em",
               color: colors.accent,
@@ -66,11 +73,11 @@ export const ThemedAnalysisLayout: FC<AnalysisLayoutProps> = ({ project, theme, 
           </div>
           <div
             style={{
-              fontSize: type.meta,
+              fontSize: `${type.meta}px`,
               fontWeight: 700,
               padding: "4px 10px",
               background: colors.accent,
-              borderRadius: 4,
+              borderRadius: "4px",
               boxShadow: `0 0 15px ${colors.accent}44`,
               color: colors.background,
             }}
@@ -85,10 +92,10 @@ export const ThemedAnalysisLayout: FC<AnalysisLayoutProps> = ({ project, theme, 
             style={{
               display: "flex",
               flexWrap: "wrap",
-              gap: 12,
+              gap: "12px",
               padding: "16px",
               background: colors.sectionBackground,
-              borderRadius: layout.sectionRadiusPx,
+              borderRadius: `${layout.sectionRadiusPx}px`,
               border: `1px solid ${colors.chartSurface}`,
             }}
           >
@@ -96,11 +103,11 @@ export const ThemedAnalysisLayout: FC<AnalysisLayoutProps> = ({ project, theme, 
               <div
                 key={`${c.beat}-${i}`}
                 style={{
-                  fontSize: type.sectionBody,
+                  fontSize: `${type.sectionBody}px`,
                   fontWeight: c.isActive ? 700 : 500,
                   color: c.isActive ? colors.accent : colors.textMuted,
                   padding: "4px 12px",
-                  borderRadius: 6,
+                  borderRadius: "6px",
                   background: c.isActive ? colors.chartSurface : "transparent",
                   transform: c.isActive ? `scale(1.1)` : "scale(1)",
                   transition: "all 0.2s ease-out",
@@ -114,7 +121,7 @@ export const ThemedAnalysisLayout: FC<AnalysisLayoutProps> = ({ project, theme, 
         )}
 
         {analysis.nextChordSymbol && !analysis.sectionChords.length ? (
-          <div style={{ fontSize: type.chordNext, color: colors.textMuted }}>
+          <div style={{ fontSize: `${type.chordNext}px`, color: colors.textMuted }}>
             下一和弦 <span style={{ color: colors.text }}>{analysis.nextChordSymbol}</span>
           </div>
         ) : null}
@@ -124,39 +131,65 @@ export const ThemedAnalysisLayout: FC<AnalysisLayoutProps> = ({ project, theme, 
         <div
           style={{
             borderLeft: `${layout.sectionBorderLeftPx}px solid ${colors.accent}`,
-            paddingLeft: layout.sectionPaddingPx + 2,
+            paddingLeft: `${layout.sectionPaddingPx + 2}px`,
             background: colors.sectionBackground,
-            borderRadius: layout.sectionRadiusPx,
-            paddingTop: layout.sectionPaddingPx,
-            paddingBottom: layout.sectionPaddingPx,
-            paddingRight: layout.sectionPaddingPx,
+            borderRadius: `${layout.sectionRadiusPx}px`,
+            paddingTop: `${layout.sectionPaddingPx}px`,
+            paddingBottom: `${layout.sectionPaddingPx}px`,
+            paddingRight: `${layout.sectionPaddingPx}px`,
+            marginBottom: analysis.sectionComment ? "8px" : "0",
           }}
         >
           <div
             style={{
-              fontSize: type.sectionLabel,
+              fontSize: `${type.sectionLabel}px`,
               color: colors.textMuted,
               textTransform: "uppercase",
+              fontWeight: 700,
+              letterSpacing: "0.1em",
             }}
           >
             {analysis.sectionLabel}
           </div>
-          {analysis.sectionComment ? (
-            <div style={{ fontSize: type.sectionBody, marginTop: 6, lineHeight: 1.45 }}>{analysis.sectionComment}</div>
-          ) : null}
         </div>
       ) : null}
 
+      <div
+        style={{
+          fontSize: `${analysis.sectionCommentStyle?.fontSize || type.sectionBody}px`,
+          fontFamily: analysis.sectionCommentStyle?.fontFamily || "Inter",
+          lineHeight: 1.5,
+          color: colors.text,
+          padding: "12px 16px",
+          background: colors.sectionBackground || "rgba(255,255,255,0.03)",
+          borderRadius: "8px",
+          borderLeft: `3px solid ${analysis.sectionComment ? colors.accent : colors.textMuted + "44"}`,
+          minHeight: "5em", // Standardized height for analysis text
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          transition: "all 0.3s ease",
+          opacity: analysis.sectionComment ? 1 : 0.4,
+        }}
+      >
+        <div style={{ fontSize: "11px", color: colors.textMuted, textTransform: "uppercase", marginBottom: "4px", fontWeight: 700, letterSpacing: "0.05em" }}>
+          音乐赏析
+        </div>
+        <div style={{ flex: 1 }}>
+          {analysis.sectionComment || ""}
+        </div>
+      </div>
+
       <div style={{ marginTop: "auto" }}>
-        <div style={{ fontSize: type.chartCaption, color: colors.textMuted, marginBottom: 6 }}>旋律线（示意）</div>
+        <div style={{ fontSize: `${type.chartCaption}px`, color: colors.textMuted, marginBottom: "6px" }}>情感线（示意）</div>
         <svg width={chartWidth} height={chartHeight} style={{ display: "block" }}>
           <rect width={chartWidth} height={chartHeight} rx={layout.chartRadiusPx} fill={colors.chartSurface} />
-          {analysis.melodyLinePath ? (
+          {analysis.emotionLinePath ? (
             <path
-              d={analysis.melodyLinePath}
+              d={analysis.emotionLinePath}
               fill="none"
               stroke={colors.accent}
-              strokeWidth={layout.melodyStrokePx}
+              strokeWidth={layout.emotionStrokePx}
               strokeLinecap="round"
               strokeLinejoin="round"
             />
@@ -174,7 +207,7 @@ export const ThemedAnalysisLayout: FC<AnalysisLayoutProps> = ({ project, theme, 
       </div>
 
       {project.style?.footerText ? (
-        <div style={{ fontSize: type.footer, color: colors.textMuted, textAlign: "center", marginTop: 4 }}>
+        <div style={{ fontSize: `${type.footer}px`, color: colors.textMuted, textAlign: "center", marginTop: "4px" }}>
           {project.style.footerText}
         </div>
       ) : null}

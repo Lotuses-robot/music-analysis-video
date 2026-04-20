@@ -22,7 +22,7 @@ export const paperLightTheme: ThemeDefinition = {
     sectionPaddingPx: 14,
     sectionRadiusPx: 10,
     chartRadiusPx: 12,
-    melodyStrokePx: 3,
+    emotionStrokePx: 3,
     playheadStrokePx: 2,
   },
   typography: {

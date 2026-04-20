@@ -11,6 +11,8 @@ function extrapolationMode(sync: ProjectSync): NonNullable<ProjectSync["extrapol
 /**
  * Map musical beat to audio time using piecewise-linear anchors.
  * Requires at least one anchor; two or more recommended for meaningful tempo shape.
+ * @param beat
+ * @param sync
  */
 export function beatToTime(beat: number, sync: ProjectSync): number {
   const mode = extrapolationMode(sync);
@@ -53,6 +55,8 @@ export function beatToTime(beat: number, sync: ProjectSync): number {
 /**
  * Inverse of beatToTime for the same anchor set (piecewise linear).
  * If multiple beats share the same timeSec, the first matching segment wins.
+ * @param timeSec
+ * @param sync
  */
 export function timeToBeat(timeSec: number, sync: ProjectSync): number {
   const mode = extrapolationMode(sync);
@@ -90,6 +94,12 @@ export function timeToBeat(timeSec: number, sync: ProjectSync): number {
   return last.beat;
 }
 
+/**
+ *
+ * @param beat
+ * @param sync
+ * @param fps
+ */
 export function beatToFrame(beat: number, sync: ProjectSync, fps: number): number {
   return Math.round(beatToTime(beat, sync) * fps);
 }

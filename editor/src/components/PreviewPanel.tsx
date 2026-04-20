@@ -1,6 +1,6 @@
 import type { FC } from "react";
 import { Player, type PlayerRef } from "@remotion/player";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useMemo, memo } from "react";
 import { AnalysisVideo } from "../../../remotion/AnalysisVideo";
 import type { MusicAnalysisVideoProject } from "../../../src/types/project";
 import { getCompositionSize, getPlayerTiming, type Aspect } from "../lib/playerConfig";
@@ -12,11 +12,13 @@ type Props = {
   playerRef?: React.RefObject<PlayerRef | null>;
 };
 
-export const PreviewPanel: FC<Props> = ({ project, aspect, onFrameChange, playerRef: externalRef }) => {
+export const PreviewPanel: FC<Props> = memo(({ project, aspect, onFrameChange, playerRef: externalRef }) => {
   const { width, height } = getCompositionSize(aspect);
   const { fps, durationInFrames } = getPlayerTiming(project);
   const internalRef = useRef<PlayerRef>(null);
   const playerRef = externalRef || internalRef;
+
+  const inputProps = useMemo(() => ({ project }), [project]);
 
   useEffect(() => {
     const { current } = playerRef;
@@ -30,29 +32,32 @@ export const PreviewPanel: FC<Props> = ({ project, aspect, onFrameChange, player
     return () => {
       current.removeEventListener("frameupdate", onFrameUpdate as any);
     };
-  }, [onFrameChange]);
+  }, [onFrameChange, playerRef]);
 
   return (
-    <div>
+    <div className="preview-panel-root">
       <div className="preview-toolbar">
-        <span style={{ fontSize: "0.75rem", color: "var(--muted)" }}>
-          {width}×{height} · {fps}fps · {durationInFrames}f
-        </span>
+        {width}×{height} · {fps}fps · {durationInFrames}f
       </div>
-      <div className="preview-frame">
+      <div className="preview-player-container">
         <Player
           ref={playerRef}
           acknowledgeRemotionLicense
           component={AnalysisVideo}
-          inputProps={{ project }}
+          inputProps={inputProps}
           durationInFrames={durationInFrames}
           compositionWidth={width}
           compositionHeight={height}
           fps={fps}
-          controls
-          style={{ width: "100%" }}
+          controls={false} // Disable Remotion's controls
+          style={{ 
+            width: "100%",
+            height: "100%",
+            backgroundColor: "#000",
+          }}
           errorFallback={({ error }) => (
-            <div className="preview-error" style={{ margin: 0 }}>
+            <div className="preview-error">
+              <strong>渲染错误:</strong><br/>
               {error.message}
             </div>
           )}
@@ -60,4 +65,6 @@ export const PreviewPanel: FC<Props> = ({ project, aspect, onFrameChange, player
       </div>
     </div>
   );
-};
+});
+
+PreviewPanel.displayName = "PreviewPanel";

@@ -2,36 +2,40 @@ import { getContentEndSec } from "../../src/analysis/duration";
 import {
   getActiveChord,
   getActiveSection,
+  getActiveComment,
   getBarInfo,
   getBeatAtTimeSec,
   getNextChord,
   keyAtBeat,
   timeSignatureAtBeat,
+  flattenEvents,
 } from "../../src/analysis/selectors";
 import type { MusicAnalysisVideoProject } from "../../src/types/project";
 import { beatToTime } from "../../src/sync/beatTime";
 import type { FrameAnalysis } from "../theme/types";
 
-function buildMelodyGeometry(
+function buildEmotionGeometry(
   project: MusicAnalysisVideoProject,
   timeSec: number,
   totalSec: number,
   chartW: number,
   chartH: number,
 ): { lineD: string; playheadX: number } {
-  const melodyPoints = [...project.melody].sort((a, b) => a.beat - b.beat);
-  const midiMin = melodyPoints.length ? Math.min(...melodyPoints.map((p) => p.midi)) : 60;
-  const midiMax = melodyPoints.length ? Math.max(...melodyPoints.map((p) => p.midi)) : 72;
-  const midiSpan = Math.max(1, midiMax - midiMin);
+  const emotionPoints = flattenEvents(project, (e) => e.type === "emotion")
+    .map((e) => ({ beat: e.beat, val: e.event.value as number }));
+    
+  const valMin = emotionPoints.length ? Math.min(...emotionPoints.map((p) => p.val)) : 60;
+  const valMax = emotionPoints.length ? Math.max(...emotionPoints.map((p) => p.val)) : 72;
+  const valSpan = Math.max(1, valMax - valMin);
 
   const toX = (b: number) => (beatToTime(b, project.sync) / totalSec) * chartW;
-  const toY = (midi: number) =>
-    chartH - ((midi - midiMin) / midiSpan) * (chartH * 0.72) - chartH * 0.14;
+  const toY = (val: number) =>
+    chartH - ((val - valMin) / valSpan) * (chartH * 0.72) - chartH * 0.14;
 
   const lineD =
-    melodyPoints.length > 0
-      ? melodyPoints
-          .map((p, i) => `${i === 0 ? "M" : "L"} ${toX(p.beat).toFixed(1)} ${toY(p.midi).toFixed(1)}`)
+    emotionPoints.length > 0
+      ? emotionPoints
+          .map((p, i) => `${i === 0 ? "M" : "L"} ${toX(p.beat).toFixed(1)} ${toY(p.val).toFixed(1)}`)
           .join(" ")
       : "";
 
@@ -41,6 +45,13 @@ function buildMelodyGeometry(
   return { lineD, playheadX };
 }
 
+/**
+ *
+ * @param project
+ * @param timeSec
+ * @param chartW
+ * @param chartH
+ */
 export function buildFrameAnalysis(
   project: MusicAnalysisVideoProject,
   timeSec: number,
@@ -50,28 +61,29 @@ export function buildFrameAnalysis(
   const beat = getBeatAtTimeSec(project, timeSec);
   const chord = getActiveChord(project, beat);
   const nextChord = getNextChord(project, beat);
-  const section = getActiveSection(project, beat);
+  const activeSection = getActiveSection(project, beat);
+  const activeComment = getActiveComment(project, beat);
   const key = keyAtBeat(project, beat);
   const ts = timeSignatureAtBeat(project, beat);
   const totalSec = getContentEndSec(project);
-  const { lineD, playheadX } = buildMelodyGeometry(project, timeSec, totalSec, chartW, chartH);
+  const { lineD, playheadX } = buildEmotionGeometry(project, timeSec, totalSec, chartW, chartH);
   const barInfo = getBarInfo(project, beat);
 
   // Extract chords within the current section
-  const sectionChords = section
-    ? project.chords
+  const allChords = flattenEvents(project, (e) => e.type === "chord")
+    .map(c => ({ symbol: c.event.value as string, beat: c.beat }));
+
+  const sectionChords = activeSection
+    ? allChords
         .filter((c) => {
-          const end = section.endBeat ?? Number.POSITIVE_INFINITY;
-          return c.beat >= section.startBeat && c.beat < end;
+          const end = activeSection.endBeat ?? Number.POSITIVE_INFINITY;
+          return c.beat >= activeSection.startBeat && c.beat < end;
         })
-        .sort((a, b) => a.beat - b.beat)
         .map((c) => {
-          // A chord is "active" if it's the latest one before or at current beat
-          const activeChord = getActiveChord(project, beat);
           return {
             symbol: c.symbol,
             beat: c.beat,
-            isActive: activeChord?.beat === c.beat,
+            isActive: chord?.beat === c.beat,
           };
         })
     : [];
@@ -81,12 +93,13 @@ export function buildFrameAnalysis(
     beat,
     chordSymbol: chord?.symbol ?? "—",
     nextChordSymbol: nextChord?.symbol ?? null,
-    sectionLabel: section?.label ?? null,
-    sectionComment: section?.comment ?? null,
+    sectionLabel: activeSection?.label ?? null,
+    sectionComment: activeComment?.value as string ?? null,
+    sectionCommentStyle: activeComment?.style ?? null,
     keyLabel: key,
     timeSignatureLabel: `${ts.upper}/${ts.lower}`,
     bpmHint: project.meta.bpmDisplayHint ?? null,
-    melodyLinePath: lineD,
+    emotionLinePath: lineD,
     playheadX,
     barNumber: barInfo.barNumber,
     beatInBar: barInfo.beatInBar,

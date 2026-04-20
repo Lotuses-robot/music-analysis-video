@@ -6,6 +6,12 @@ export type AnalysisVideoProps = {
   project: MusicAnalysisVideoProject;
 };
 
+/**
+ *
+ * @param root0
+ * @param root0.props
+ * @param root0.compositionId
+ */
 export const calculateAnalysisMetadata: CalculateMetadataFunction<AnalysisVideoProps> = ({
   props,
   compositionId,

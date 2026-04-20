@@ -4,6 +4,9 @@ import { AnalysisVideo } from "./AnalysisVideo";
 import { calculateAnalysisMetadata } from "./metadata";
 import { defaultProject } from "./defaultProject";
 
+/**
+ *
+ */
 export const RemotionRoot: FC = () => {
   return (
     <>

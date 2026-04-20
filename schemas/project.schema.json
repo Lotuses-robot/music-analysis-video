@@ -4,13 +4,13 @@
   "title": "MusicAnalysisVideoProject",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schemaVersion", "meta", "sync", "timeSignature", "key", "sections", "chords", "melody"],
+  "required": ["schemaVersion", "meta", "sync", "key", "measures"],
   "properties": {
     "schemaVersion": {
       "type": "string",
       "description": "Bump when breaking or migrating project JSON shape.",
       "pattern": "^[0-9]+(\\.[0-9]+){0,2}$",
-      "examples": ["1"]
+      "examples": ["2"]
     },
     "meta": {
       "type": "object",
@@ -65,95 +65,61 @@
         }
       }
     },
-    "timeSignature": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["default"],
-      "properties": {
-        "default": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["upper", "lower"],
-          "properties": {
-            "upper": { "type": "integer", "minimum": 1 },
-            "lower": { "type": "integer", "enum": [1, 2, 4, 8, 16, 32] }
-          }
-        },
-        "changes": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "additionalProperties": false,
-            "required": ["beat", "upper", "lower"],
-            "properties": {
-              "beat": { "type": "number" },
-              "upper": { "type": "integer", "minimum": 1 },
-              "lower": { "type": "integer", "enum": [1, 2, 4, 8, 16, 32] }
-            }
-          }
-        }
-      }
-    },
     "key": {
       "type": "object",
       "additionalProperties": false,
       "required": ["default"],
       "properties": {
-        "default": { "type": "string", "minLength": 1, "description": "e.g. Eb major, Bb minor" },
-        "changes": {
-          "type": "array",
-          "items": {
+        "default": { "type": "string", "description": "Global or starting key label (e.g., 'C Major')." }
+      }
+    },
+    "measures": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["index", "timeSignature", "events"],
+        "properties": {
+          "index": { "type": "integer", "minimum": 1 },
+          "timeSignature": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["beat", "key"],
+            "required": ["upper", "lower"],
             "properties": {
-              "beat": { "type": "number" },
-              "key": { "type": "string", "minLength": 1 }
+              "upper": { "type": "integer", "minimum": 1 },
+              "lower": { "type": "integer", "enum": [1, 2, 4, 8, 16, 32] }
             }
-          }
-        }
-      }
-    },
-    "sections": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": ["id", "label", "startBeat"],
-        "properties": {
-          "id": { "type": "string", "minLength": 1 },
-          "label": { "type": "string" },
-          "startBeat": { "type": "number" },
-          "endBeat": { "type": "number", "description": "Exclusive end; omit for open-ended tail." },
-          "comment": { "type": "string", "description": "Short analysis note shown in the video." }
-        }
-      }
-    },
-    "chords": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": ["beat", "symbol"],
-        "properties": {
-          "beat": { "type": "number" },
-          "symbol": { "type": "string", "minLength": 1, "description": "Display string, e.g. Am7, F#m7b5" }
-        }
-      }
-    },
-    "melody": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": ["beat", "midi"],
-        "properties": {
-          "beat": { "type": "number" },
-          "midi": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 127,
-            "description": "MIDI note number for simplified pitch contour."
+          },
+          "section": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "label"],
+            "properties": {
+              "id": { "type": "string" },
+              "label": { "type": "string" },
+              "comment": { "type": "string" }
+            }
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["beatOffset", "type", "value"],
+              "properties": {
+                "beatOffset": { "type": "number", "minimum": 0 },
+                "type": {
+                  "type": "string",
+                  "enum": ["chord", "key_change", "bpm_change", "comment", "emotion", "section"]
+                },
+                "value": {
+                  "oneOf": [
+                    { "type": "string" },
+                    { "type": "number" }
+                  ]
+                }
+              }
+            }
           }
         }
       }
@@ -162,12 +128,9 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "themeId": {
-          "type": "string",
-          "description": "Built-in: minimal-dark (default), paper-light. Unknown ids fall back to minimal-dark."
-        },
-        "primaryColor": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
-        "secondaryColor": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+        "themeId": { "type": "string" },
+        "primaryColor": { "type": "string", "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$" },
+        "secondaryColor": { "type": "string", "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$" },
         "footerText": { "type": "string" }
       }
     },
@@ -175,8 +138,12 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "fps": { "type": "integer", "enum": [24, 25, 30, 60], "default": 30 },
-        "defaultComposition": { "type": "string", "enum": ["9:16", "16:9"], "default": "9:16" }
+        "fps": { "type": "integer", "enum": [24, 25, 30, 60] },
+        "defaultComposition": { "type": "string", "enum": ["9:16", "16:9"] },
+        "outputName": { "type": "string" },
+        "crf": { "type": "integer", "minimum": 0, "maximum": 51 },
+        "audioBitrate": { "type": "integer", "minimum": 64 },
+        "pixelFormat": { "type": "string", "enum": ["yuv420p", "yuv422p", "yuv444p"] }
       }
     }
   }

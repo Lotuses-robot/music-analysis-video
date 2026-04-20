@@ -21,7 +21,7 @@ export const midnightBlueTheme: ThemeDefinition = {
     sectionPaddingPx: 16,
     sectionRadiusPx: 12,
     chartRadiusPx: 16,
-    melodyStrokePx: 4,
+    emotionStrokePx: 4,
     playheadStrokePx: 3,
   },
   typography: {

@@ -1,7 +1,7 @@
 {
-  "schemaVersion": "1",
+  "schemaVersion": "2",
   "meta": {
-    "title": "示例曲 · 主歌到副歌",
+    "title": "示例�?· 主歌到副�?(重构�?",
     "artist": "演示",
     "audioPath": "audio/demo-track.wav",
     "audioStartOffsetSec": 0,
@@ -19,72 +19,113 @@
     ],
     "extrapolation": "clamp"
   },
-  "timeSignature": {
-    "default": { "upper": 4, "lower": 4 },
-    "changes": [{ "beat": 32, "upper": 6, "lower": 8 }]
-  },
   "key": {
-    "default": "F major",
-    "changes": [{ "beat": 32, "key": "D minor" }]
+    "default": "F major"
   },
-  "sections": [
+  "measures": [
     {
-      "id": "intro",
-      "label": "Intro",
-      "startBeat": 0,
-      "endBeat": 8,
-      "comment": "氛围铺垫，和声较淡。"
+      "index": 1,
+      "timeSignature": { "upper": 4, "lower": 4 },
+      "events": [
+        { "beatOffset": 0, "type": "section", "value": "Intro" },
+        { "beatOffset": 0, "type": "chord", "value": "Fmaj7" }
+      ]
     },
     {
-      "id": "verse",
-      "label": "Verse A",
-      "startBeat": 8,
-      "endBeat": 32,
-      "comment": "旋律线条清晰，注意二级和弦的色彩。"
+      "index": 2,
+      "timeSignature": { "upper": 4, "lower": 4 },
+      "events": [
+        { "beatOffset": 0, "type": "chord", "value": "Dm7" }
+      ]
     },
     {
-      "id": "chorus",
-      "label": "Chorus",
-      "startBeat": 32,
-      "comment": "副歌张力上来，节奏更密；拍号在此切换为示例。"
+      "index": 3,
+      "timeSignature": { "upper": 4, "lower": 4 },
+      "events": [
+        { "beatOffset": 0, "type": "section", "value": "Verse A" },
+        { "beatOffset": 0, "type": "chord", "value": "Bb" },
+        { "beatOffset": 0, "type": "emotion", "value": 65 },
+        { "beatOffset": 1, "type": "emotion", "value": 67 },
+        { "beatOffset": 2, "type": "emotion", "value": 69 }
+      ]
+    },
+    {
+      "index": 4,
+      "timeSignature": { "upper": 4, "lower": 4 },
+      "events": [
+        { "beatOffset": 0, "type": "chord", "value": "C7" },
+        { "beatOffset": 0, "type": "emotion", "value": 67 },
+        { "beatOffset": 2, "type": "emotion", "value": 65 }
+      ]
+    },
+    {
+      "index": 5,
+      "timeSignature": { "upper": 4, "lower": 4 },
+      "events": [
+        { "beatOffset": 0, "type": "chord", "value": "F" },
+        { "beatOffset": 0, "type": "emotion", "value": 64 },
+        { "beatOffset": 2, "type": "emotion", "value": 65 }
+      ]
+    },
+    {
+      "index": 6,
+      "timeSignature": { "upper": 4, "lower": 4 },
+      "events": [
+        { "beatOffset": 0, "type": "chord", "value": "Dm" },
+        { "beatOffset": 0, "type": "emotion", "value": 67 }
+      ]
+    },
+    {
+      "index": 7,
+      "timeSignature": { "upper": 4, "lower": 4 },
+      "events": [
+        { "beatOffset": 0, "type": "chord", "value": "Gm7" },
+        { "beatOffset": 0, "type": "emotion", "value": 69 }
+      ]
+    },
+    {
+      "index": 8,
+      "timeSignature": { "upper": 4, "lower": 4 },
+      "events": [
+        { "beatOffset": 0, "type": "chord", "value": "C7" },
+        { "beatOffset": 0, "type": "emotion", "value": 67 }
+      ]
+    },
+    {
+      "index": 9,
+      "timeSignature": { "upper": 6, "lower": 8 },
+      "events": [
+        { "beatOffset": 0, "type": "section", "value": "Chorus" },
+        { "beatOffset": 0, "type": "key_change", "value": "D minor" },
+        { "beatOffset": 0, "type": "chord", "value": "Dm" },
+        { "beatOffset": 0, "type": "emotion", "value": 62 },
+        { "beatOffset": 2, "type": "emotion", "value": 64 },
+        { "beatOffset": 4, "type": "chord", "value": "Bb" },
+        { "beatOffset": 4, "type": "emotion", "value": 65 }
+      ]
+    },
+    {
+      "index": 10,
+      "timeSignature": { "upper": 6, "lower": 8 },
+      "events": [
+        { "beatOffset": 2, "type": "chord", "value": "F" },
+        { "beatOffset": 2, "type": "emotion", "value": 67 }
+      ]
+    },
+    {
+      "index": 11,
+      "timeSignature": { "upper": 6, "lower": 8 },
+      "events": [
+        { "beatOffset": 0, "type": "chord", "value": "C" },
+        { "beatOffset": 0, "type": "emotion", "value": 65 }
+      ]
     }
-  ],
-  "chords": [
-    { "beat": 0, "symbol": "Fmaj7" },
-    { "beat": 4, "symbol": "Dm7" },
-    { "beat": 8, "symbol": "Bb" },
-    { "beat": 12, "symbol": "C7" },
-    { "beat": 16, "symbol": "F" },
-    { "beat": 20, "symbol": "Dm" },
-    { "beat": 24, "symbol": "Gm7" },
-    { "beat": 28, "symbol": "C7" },
-    { "beat": 32, "symbol": "Dm" },
-    { "beat": 36, "symbol": "Bb" },
-    { "beat": 40, "symbol": "F" },
-    { "beat": 44, "symbol": "C" }
-  ],
-  "melody": [
-    { "beat": 8, "midi": 65 },
-    { "beat": 9, "midi": 67 },
-    { "beat": 10, "midi": 69 },
-    { "beat": 12, "midi": 67 },
-    { "beat": 14, "midi": 65 },
-    { "beat": 16, "midi": 64 },
-    { "beat": 18, "midi": 65 },
-    { "beat": 20, "midi": 67 },
-    { "beat": 24, "midi": 69 },
-    { "beat": 28, "midi": 67 },
-    { "beat": 32, "midi": 62 },
-    { "beat": 34, "midi": 64 },
-    { "beat": 36, "midi": 65 },
-    { "beat": 40, "midi": 67 },
-    { "beat": 44, "midi": 65 }
   ],
   "style": {
     "themeId": "minimal-dark",
     "primaryColor": "#E8E8EF",
     "secondaryColor": "#7AE7C7",
-    "footerText": "仅供音乐学习分析"
+    "footerText": "仅供音乐学习分析 (Measure-based)"
   },
   "export": {
     "fps": 30,
