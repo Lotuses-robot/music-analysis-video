@@ -4,6 +4,7 @@ import type { MusicAnalysisVideoProject, SyncExtrapolation, ProjectMeasure } fro
 type Props = {
   project: MusicAnalysisVideoProject;
   onChange: (next: MusicAnalysisVideoProject) => void;
+  onImportAudio?: () => void;
   currentBeat: number;
   currentTime: number;
 };
@@ -14,10 +15,11 @@ type Props = {
  * @param props 组件属性
  * @param props.project 当前项目数据
  * @param props.onChange 项目更新回调
+ * @param props.onImportAudio 导入音频回调
  * @param props.currentBeat 当前播放拍数
  * @param props.currentTime 当前播放时间（秒）
  */
-export const ProjectForm: FC<Props> = ({ project, onChange, currentBeat, currentTime }) => {
+export const ProjectForm: FC<Props> = ({ project, onChange, onImportAudio, currentBeat, currentTime }) => {
   const setMeta = (patch: Partial<MusicAnalysisVideoProject["meta"]>) => {
     onChange({ ...project, meta: { ...project.meta, ...patch } });
   };
@@ -77,7 +79,10 @@ export const ProjectForm: FC<Props> = ({ project, onChange, currentBeat, current
           </div>
           <div className="field">
             <label htmlFor="audioPath">音频路径</label>
-            <input id="audioPath" value={project.meta.audioPath} onChange={(e) => setMeta({ audioPath: e.target.value })} />
+            <div style={{ display: "flex", gap: 8 }}>
+              <input id="audioPath" value={project.meta.audioPath} onChange={(e) => setMeta({ audioPath: e.target.value })} style={{ flex: 1 }} />
+              <button className="btn btn--small" onClick={onImportAudio} title="导入本地音频文件">导入</button>
+            </div>
           </div>
           <div className="field">
             <label htmlFor="audioStart">片头裁剪 (秒)</label>

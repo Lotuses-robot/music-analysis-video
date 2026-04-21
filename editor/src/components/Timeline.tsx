@@ -58,7 +58,11 @@ export const Timeline: FC<TimelineProps> = ({
   useEffect(() => {
     if (!project.meta.audioPath) return;
     
-    const url = `/${project.meta.audioPath}`;
+    // 如果是 blob: URL 或 http: URL，直接使用；否则拼接为相对于 public 的路径
+    const url = project.meta.audioPath.startsWith("blob:") || project.meta.audioPath.startsWith("http")
+      ? project.meta.audioPath 
+      : `/${project.meta.audioPath}`;
+      
     fetch(url)
       .then(res => res.arrayBuffer())
       .then(buffer => {
@@ -770,23 +774,25 @@ export const Timeline: FC<TimelineProps> = ({
             {renderRuler()}
           </div>
           
-          {/* Tracks */}
-          {renderSections()}
-          {renderChords()}
-          {renderKeyChanges()}
-          {renderComments()}
-          
-          {/* Waveform / Emotion (Adjacent) */}
-          {renderEmotion()}
-          <div className="timeline-track" style={{ height: 80, overflow: "hidden" }}>
-            <div className="track-label">波形</div>
-            <div style={{ position: "absolute", width: "100%", height: "100%", background: "linear-gradient(to bottom, transparent, rgba(255,255,255,0.02), transparent)" }}>
+          {/* Audio Track (Waveform) */}
+          <div className="timeline-track audio-track" style={{ height: 80, overflow: "hidden", background: "rgba(0,0,0,0.2)" }}>
+            <div className="track-label">音频线</div>
+            <div style={{ position: "absolute", width: "100%", height: "100%", background: "linear-gradient(to bottom, transparent, rgba(77, 144, 254, 0.05), transparent)" }}>
               <canvas 
                 ref={waveformCanvasRef} 
                 style={{ position: "absolute", left: 0, top: 0, height: "100%" }} 
               />
             </div>
           </div>
+
+          {/* Tracks */}
+          {renderSections()}
+          {renderChords()}
+          {renderKeyChanges()}
+          {renderComments()}
+          
+          {/* Emotion (Adjacent) */}
+          {renderEmotion()}
 
           {/* Playhead */}
           <div

@@ -12,6 +12,15 @@ type Props = {
   playerRef?: React.RefObject<PlayerRef | null>;
 };
 
+/**
+ * 预览面板组件。
+ * 集成了 Remotion Player，用于实时预览音乐分析视频。
+ * @param props 组件属性
+ * @param props.project 当前项目数据
+ * @param props.aspect 视频比例 (9:16 或 16:9)
+ * @param props.onFrameChange 帧变更时的回调
+ * @param props.playerRef 外部传入的 Player 引用
+ */
 export const PreviewPanel: FC<Props> = memo(({ project, aspect, onFrameChange, playerRef: externalRef }) => {
   const { width, height } = getCompositionSize(aspect);
   const { fps, durationInFrames } = getPlayerTiming(project);

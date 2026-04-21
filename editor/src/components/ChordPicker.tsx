@@ -54,11 +54,11 @@ const DEGREES = ["I", "bII", "II", "bIII", "III", "IV", "#IV", "V", "bVI", "VI",
 
 /**
  * 和弦选择器组件。
- * 提供五度圈界面供用户选择根音、和弦类型、音程及低音。
+ * 提供基于五度圈的交互式界面，用于选择根音、和弦类型和附加音。
  * @param props 组件属性
- * @param props.value 当前和弦值
+ * @param props.value 当前选中的和弦字符串
  * @param props.onChange 和弦变更回调
- * @param props.currentKey 当前调性，用于自动选择升降号偏好
+ * @param props.currentKey 当前调性，用于高亮相关和弦
  */
 export const ChordPicker: FC<ChordPickerProps> = ({ value, onChange, currentKey = "C" }) => {
   const [root, setRoot] = useState("C");

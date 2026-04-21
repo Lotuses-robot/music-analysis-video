@@ -102,6 +102,7 @@ export const App: FC = () => {
   const [selectedTool, setSelectedTool] = useState<"select" | "add" | "delete">("select");
   
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const audioFileInputRef = useRef<HTMLInputElement>(null);
   const playerRef = useRef<PlayerRef>(null);
 
   const durationSec = useMemo(() => getContentEndSec(project), [project]);
@@ -328,6 +329,22 @@ export const App: FC = () => {
     reader.readAsText(file, "utf-8");
   }, [pushHistory]);
 
+  /**
+   * 加载本地音频文件 (onPickAudioFile)
+   * @param file 音频文件
+   */
+  const onPickAudioFile = useCallback((file: File | undefined) => {
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    pushHistory({
+      ...project,
+      meta: {
+        ...project.meta,
+        audioPath: url
+      }
+    });
+  }, [project, pushHistory]);
+
   // Keyboard shortcut for Tapper (Space)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -486,6 +503,18 @@ export const App: FC = () => {
                   }}
                 />
               </div>
+              <div className="field">
+                <input
+                  ref={audioFileInputRef}
+                  type="file"
+                  accept="audio/*"
+                  hidden
+                  onChange={(e) => {
+                    onPickAudioFile(e.target.files?.[0]);
+                    e.target.value = "";
+                  }}
+                />
+              </div>
             </div>
           )}
           
@@ -493,6 +522,7 @@ export const App: FC = () => {
             <ProjectForm 
               project={project} 
               onChange={pushHistory} 
+              onImportAudio={() => audioFileInputRef.current?.click()}
               currentBeat={currentBeat} 
               currentTime={currentTime}
             />

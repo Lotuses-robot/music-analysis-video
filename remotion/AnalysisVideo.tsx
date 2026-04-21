@@ -38,7 +38,11 @@ export const AnalysisVideo: FC<AnalysisVideoProps> = ({ project }) => {
   if (!theme || !analysis) return null;
 
   const offsetFrames = Math.round((project.meta.audioStartOffsetSec ?? 0) * fps);
-  const audioSrc = project.meta.audioPath ? staticFile(project.meta.audioPath) : null;
+  const audioSrc = project.meta.audioPath 
+    ? (project.meta.audioPath.startsWith("blob:") || project.meta.audioPath.startsWith("http")
+        ? project.meta.audioPath 
+        : staticFile(project.meta.audioPath))
+    : null;
 
   return (
     <AbsoluteFill
