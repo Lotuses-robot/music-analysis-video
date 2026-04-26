@@ -134,3 +134,47 @@ export function timeToBeat(timeSec: number, sync: ProjectSync): number {
 export function beatToFrame(beat: number, sync: ProjectSync, fps: number): number {
   return Math.round(beatToTime(beat, sync) * fps);
 }
+
+/**
+ * 当拍号改变时，重新映射同步锚点以保持物理时间对齐。
+ */
+export function remapSyncAfterTimeSignatureChange(
+  anchors: SyncAnchor[],
+  oldMeasures: { timeSignature: { upper: number } }[],
+  newMeasures: { timeSignature: { upper: number } }[],
+  changeIdx: number
+): SyncAnchor[] {
+  // 1. 计算旧/新每小节的起始绝对拍数
+  const oldStarts = [0];
+  for (let i = 0; i < oldMeasures.length; i++) {
+    oldStarts.push(oldStarts[i] + oldMeasures[i].timeSignature.upper);
+  }
+
+  const newStarts = [0];
+  for (let i = 0; i < newMeasures.length; i++) {
+    newStarts.push(newStarts[i] + newMeasures[i].timeSignature.upper);
+  }
+
+  // 2. 核心重映射逻辑
+  return anchors.map(a => {
+    // 找到该锚点所在的旧小节索引
+    let mIdx = 0;
+    for (let i = 0; i < oldMeasures.length; i++) {
+      if (a.beat < oldStarts[i + 1]) {
+        mIdx = i;
+        break;
+      }
+      mIdx = i;
+    }
+
+    const oldStart = oldStarts[mIdx];
+    const oldLen = oldMeasures[mIdx].timeSignature.upper;
+    const ratio = (a.beat - oldStart) / oldLen;
+
+    const newStart = newStarts[mIdx];
+    const newLen = newMeasures[mIdx].timeSignature.upper;
+    const newBeat = newStart + (newLen * ratio);
+
+    return { ...a, beat: Number(newBeat.toFixed(4)) };
+  });
+}

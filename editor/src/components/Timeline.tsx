@@ -3,7 +3,9 @@ import { useMemo, useState, useRef, useCallback, useEffect } from "react";
 import type { MusicAnalysisVideoProject, MeasureEvent, SyncAnchor } from "../../../src/types/project";
 import { getLastContentBeat, getSyncedEndSec } from "../../../src/analysis/duration";
 import { flattenEvents } from "../../../src/analysis/selectors";
-import { beatToTime, timeToBeat } from "../../../src/sync/beatTime";
+import { beatToTime, timeToBeat, remapSyncAfterTimeSignatureChange } from "../../../src/sync/beatTime";
+
+import { useAudioBuffer } from "../hooks/useAudioBuffer";
 
 interface TimelineProps {
   project: MusicAnalysisVideoProject;
@@ -45,7 +47,7 @@ export const Timeline: FC<TimelineProps> = ({
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isDraggingSeek, setIsDraggingSeek] = useState(false);
 
-  const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null);
+  const { audioBuffer } = useAudioBuffer(project.meta.audioPath);
 
   // 计算时间轴总长度
   const maxBeat = useMemo(() => Math.max(getLastContentBeat(project) + 8, 32), [project]);
@@ -55,41 +57,17 @@ export const Timeline: FC<TimelineProps> = ({
   }, [project]);
   const width = maxTimeSec * zoom;
 
-  /**
-   * 加载并解码音频文件，用于生成波形图。
-   * 使用全局单例或持久化的 AudioContext 避免超出浏览器限制。
-   */
+  // 关键：以解码后的精确时长为准，更新项目元数据
+  // 解决 VBR MP3 等容器时长不准确导致的波形对齐问题
   useEffect(() => {
-    if (!project.meta.audioPath) return;
-    
-    const url = project.meta.audioPath.startsWith("blob:") || project.meta.audioPath.startsWith("http")
-      ? project.meta.audioPath 
-      : `/${project.meta.audioPath}`;
-      
-    fetch(url)
-      .then(res => res.arrayBuffer())
-      .then(async buffer => {
-        const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-        const ctx = new AudioCtx();
-        try {
-          const decodedBuffer = await ctx.decodeAudioData(buffer);
-          setAudioBuffer(decodedBuffer);
-          
-          // 关键：以解码后的精确时长为准，更新项目元数据
-          // 解决 VBR MP3 等容器时长不准确导致的波形对齐问题
-          if (Math.abs((project.meta.duration || 0) - decodedBuffer.duration) > 0.1) {
-            console.log(`Updating project duration to decoded value: ${decodedBuffer.duration}`);
-            onUpdateProject?.({
-              ...project,
-              meta: { ...project.meta, duration: decodedBuffer.duration }
-            });
-          }
-        } finally {
-          await ctx.close();
-        }
-      })
-      .catch(err => console.error("Failed to decode audio for waveform:", err));
-  }, [project.meta.audioPath, onUpdateProject]); // 注意：不要放 project 在依赖里，否则会循环更新
+    if (audioBuffer && Math.abs((project.meta.duration || 0) - audioBuffer.duration) > 0.1) {
+      console.log(`Updating project duration to decoded value: ${audioBuffer.duration}`);
+      onUpdateProject?.({
+        ...project,
+        meta: { ...project.meta, duration: audioBuffer.duration }
+      });
+    }
+  }, [audioBuffer, project, onUpdateProject]);
 
   const waveformCanvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -248,52 +226,33 @@ export const Timeline: FC<TimelineProps> = ({
     lockAnchor(tempSync, oldEndBeat, endTimeSec);
 
     // 2. 更新小节拍号和内部事件位移
-    const oldMeasureStartBeats: number[] = [0];
-    for (let i = 0; i < prevMeasures.length; i++) {
-      oldMeasureStartBeats.push(oldMeasureStartBeats[i] + prevMeasures[i].timeSignature.upper);
-    }
-
+    const oldUpper = m.timeSignature.upper;
+    const newUpper = nextTS.upper;
+    
     for (let i = idx; i < nextMeasures.length; i++) {
       const curM = nextMeasures[i];
       const mOldUpper = curM.timeSignature.upper;
-      const newUpper = nextTS.upper;
+      const curNewUpper = (i === idx) ? newUpper : mOldUpper;
       nextMeasures[i] = {
         ...curM,
-        timeSignature: { ...curM.timeSignature, ...patch },
+        timeSignature: (i === idx) ? nextTS : curM.timeSignature,
         events: curM.events.map(e => ({
           ...e,
-          beatOffset: Number((e.beatOffset * (newUpper / mOldUpper)).toFixed(4))
+          beatOffset: Number((e.beatOffset * (curNewUpper / mOldUpper)).toFixed(4))
         }))
       };
     }
 
     // 3. 全局重映射同步锚点
-    const newMeasureStartBeats: number[] = [0];
-    for (let i = 0; i < nextMeasures.length; i++) {
-      newMeasureStartBeats.push(newMeasureStartBeats[i] + nextMeasures[i].timeSignature.upper);
-    }
-
-    const nextSync = { ...tempSync, anchors: [...tempSync.anchors] };
-    nextSync.anchors = nextSync.anchors.map(a => {
-      let mIdx = 0;
-      for (let i = 0; i < prevMeasures.length; i++) {
-        if (a.beat < oldMeasureStartBeats[i+1]) {
-          mIdx = i;
-          break;
-        }
-        mIdx = i;
-      }
-
-      const oldStart = oldMeasureStartBeats[mIdx];
-      const oldLen = prevMeasures[mIdx].timeSignature.upper;
-      const ratio = (a.beat - oldStart) / oldLen;
-
-      const newStart = newMeasureStartBeats[mIdx];
-      const newLen = nextMeasures[mIdx].timeSignature.upper;
-      const newBeat = newStart + (newLen * ratio);
-
-      return { ...a, beat: Number(newBeat.toFixed(4)) };
-    });
+    const nextSync = {
+      ...tempSync,
+      anchors: remapSyncAfterTimeSignatureChange(
+        tempSync.anchors,
+        prevMeasures,
+        nextMeasures,
+        idx
+      )
+    };
 
     onUpdateProject({
       ...project,

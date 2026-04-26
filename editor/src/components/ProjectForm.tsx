@@ -1,5 +1,6 @@
 import type { FC } from "react";
 import type { MusicAnalysisVideoProject, SyncExtrapolation, ProjectMeasure } from "../../../src/types/project";
+import { remapSyncAfterTimeSignatureChange } from "../../../src/sync/beatTime";
 
 type Props = {
   project: MusicAnalysisVideoProject;
@@ -52,10 +53,46 @@ export const ProjectForm: FC<Props> = ({ project, onChange, onImportAudio, curre
   };
 
   const updateMeasure = (index: number, patch: Partial<ProjectMeasure>) => {
-    const measures = project.measures || [];
-    const next = [...measures];
-    next[index] = { ...next[index], ...patch };
-    onChange({ ...project, measures: next });
+    const prevMeasures = project.measures || [];
+    const nextMeasures = [...prevMeasures];
+    const oldMeasure = prevMeasures[index];
+    const nextMeasure = { ...oldMeasure, ...patch };
+    nextMeasures[index] = nextMeasure;
+
+    // 如果涉及拍号修改，需要执行时间锁定重映射
+    if (patch.timeSignature) {
+      const nextSync = {
+        ...project.sync,
+        anchors: remapSyncAfterTimeSignatureChange(
+          project.sync.anchors,
+          prevMeasures,
+          nextMeasures,
+          index
+        )
+      };
+
+      // 同时处理小节内部事件的偏移缩放
+      const oldUpper = oldMeasure.timeSignature.upper;
+      const newUpper = nextMeasure.timeSignature.upper;
+      if (oldUpper !== newUpper) {
+        for (let i = index; i < nextMeasures.length; i++) {
+          const curM = nextMeasures[i];
+          const mOldUpper = curM.timeSignature.upper;
+          const curNewUpper = (i === index) ? newUpper : mOldUpper;
+          nextMeasures[i] = {
+            ...curM,
+            events: curM.events.map(e => ({
+              ...e,
+              beatOffset: Number((e.beatOffset * (curNewUpper / mOldUpper)).toFixed(4))
+            }))
+          };
+        }
+      }
+
+      onChange({ ...project, measures: nextMeasures, sync: nextSync });
+    } else {
+      onChange({ ...project, measures: nextMeasures });
+    }
   };
 
   const removeMeasure = (index: number) => {
