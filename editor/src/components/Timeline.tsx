@@ -1,7 +1,7 @@
 import type { FC } from "react";
 import { useMemo, useState, useRef, useCallback, useEffect } from "react";
 import type { MusicAnalysisVideoProject, MeasureEvent, SyncAnchor } from "../../../src/types/project";
-import { getLastContentBeat } from "../../../src/analysis/duration";
+import { getLastContentBeat, getSyncedEndSec } from "../../../src/analysis/duration";
 import { flattenEvents } from "../../../src/analysis/selectors";
 import { beatToTime, timeToBeat } from "../../../src/sync/beatTime";
 
@@ -45,36 +45,51 @@ export const Timeline: FC<TimelineProps> = ({
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isDraggingSeek, setIsDraggingSeek] = useState(false);
 
+  const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null);
+
   // 计算时间轴总长度
   const maxBeat = useMemo(() => Math.max(getLastContentBeat(project) + 8, 32), [project]);
-  const maxTimeSec = useMemo(() => beatToTime(maxBeat, project.sync), [maxBeat, project.sync]);
+  const maxTimeSec = useMemo(() => {
+    // 使用统一的时长计算逻辑，该逻辑已包含 Math.max(beatTime, audioDuration)
+    return getSyncedEndSec(project);
+  }, [project]);
   const width = maxTimeSec * zoom;
-
-  const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null);
 
   /**
    * 加载并解码音频文件，用于生成波形图。
+   * 使用全局单例或持久化的 AudioContext 避免超出浏览器限制。
    */
   useEffect(() => {
     if (!project.meta.audioPath) return;
     
-    // 如果是 blob: URL 或 http: URL，直接使用；否则拼接为相对于 public 的路径
     const url = project.meta.audioPath.startsWith("blob:") || project.meta.audioPath.startsWith("http")
       ? project.meta.audioPath 
       : `/${project.meta.audioPath}`;
       
     fetch(url)
       .then(res => res.arrayBuffer())
-      .then(buffer => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-        return ctx.decodeAudioData(buffer);
-      })
-      .then(decodedBuffer => {
-        setAudioBuffer(decodedBuffer);
+      .then(async buffer => {
+        const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+        const ctx = new AudioCtx();
+        try {
+          const decodedBuffer = await ctx.decodeAudioData(buffer);
+          setAudioBuffer(decodedBuffer);
+          
+          // 关键：以解码后的精确时长为准，更新项目元数据
+          // 解决 VBR MP3 等容器时长不准确导致的波形对齐问题
+          if (Math.abs((project.meta.duration || 0) - decodedBuffer.duration) > 0.1) {
+            console.log(`Updating project duration to decoded value: ${decodedBuffer.duration}`);
+            onUpdateProject?.({
+              ...project,
+              meta: { ...project.meta, duration: decodedBuffer.duration }
+            });
+          }
+        } finally {
+          await ctx.close();
+        }
       })
       .catch(err => console.error("Failed to decode audio for waveform:", err));
-  }, [project.meta.audioPath]);
+  }, [project.meta.audioPath, onUpdateProject]); // 注意：不要放 project 在依赖里，否则会循环更新
 
   const waveformCanvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -87,33 +102,61 @@ export const Timeline: FC<TimelineProps> = ({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const w = width;
+    // 关键：音频波形的物理宽度必须严格等于 duration * zoom
+    // 不再使用 Math.floor，允许亚像素渲染或由浏览器处理
+    const audioWidth = audioBuffer.duration * zoom;
     const h = canvas.height;
     
-    canvas.width = w;
-    canvas.height = h;
+    // 这里的 canvas.width 必须是整数，所以我们取 ceil 确保不截断
+    const canvasWidth = Math.ceil(audioWidth);
+    if (canvas.width !== canvasWidth) {
+      canvas.width = canvasWidth;
+      canvas.style.width = `${canvasWidth}px`;
+    }
     
-    ctx.clearRect(0, 0, w, h);
+    ctx.clearRect(0, 0, canvasWidth, h);
     
     const data = audioBuffer.getChannelData(0);
-    const step = Math.ceil(data.length / w);
+    const sampleRate = audioBuffer.sampleRate;
+    const audioStartOffset = project.meta.audioStartOffsetSec || 0;
+    
+    // 1像素对应的采样数 = 采样率 / 缩放倍率 (samples/sec / pixels/sec = samples/pixel)
+    const samplesPerPixel = sampleRate / zoom;
     const amp = h / 2;
 
     ctx.fillStyle = "rgba(77, 144, 254, 0.4)";
-    ctx.beginPath();
-    ctx.moveTo(0, amp);
-
-    for (let i = 0; i < w; i++) {
+    
+    for (let i = 0; i < canvasWidth; i++) {
+      // 计算当前像素对应的音频文件中的起始和结束时间
+      // 核心修复：考虑 audioStartOffset，确保波形与播放进度对齐
+      const startTimeInFile = (i / zoom) + audioStartOffset;
+      const endTimeInFile = ((i + 1) / zoom) + audioStartOffset;
+      
+      const startSample = Math.floor(startTimeInFile * sampleRate);
+      const endSample = Math.floor(endTimeInFile * sampleRate);
+      
+      if (startSample >= data.length || endSample < 0) continue;
+      
       let min = 1.0;
       let max = -1.0;
-      for (let j = 0; j < step; j++) {
-        const datum = data[(i * step) + j]; 
+      
+      // 边界检查
+      const actualStart = Math.max(0, startSample);
+      const actualEnd = Math.min(data.length, endSample);
+      
+      if (actualStart >= actualEnd) continue;
+
+      for (let j = actualStart; j < actualEnd; j++) {
+        const datum = data[j]; 
         if (datum < min) min = datum;
         if (datum > max) max = datum;
       }
-      ctx.fillRect(i, amp * (1 + min), 1, Math.max(1, amp * (max - min)));
+      
+      if (min <= max) {
+        ctx.fillRect(i, amp * (1 + min), 1, Math.max(1, amp * (max - min)));
+      }
     }
-  }, [audioBuffer, width, zoom]);
+  }, [audioBuffer, zoom, project.meta.audioStartOffsetSec]);
 
   /**
    * 处理鼠标滚轮缩放逻辑 (Ctrl + Wheel)。
@@ -170,18 +213,20 @@ export const Timeline: FC<TimelineProps> = ({
    * 修改拍号并执行“时间锁定重映射”。
    * 核心逻辑：确保小节线在物理秒数位置保持不动。
    * @param idx 小节索引 (0-based)
-   * @param upper 拍号分子 (beats per measure)
+   * @param patch 拍号修改部分 (upper 或 lower)
    */
-  const updateTimeSignature = useCallback((idx: number, upper: number) => {
+  const updateTimeSignature = useCallback((idx: number, patch: Partial<{ upper: number; lower: number }>) => {
     if (!onUpdateProject) return;
     
     const prevMeasures = project.measures;
     const nextMeasures = [...prevMeasures];
+    const m = prevMeasures[idx];
+    const nextTS = { ...m.timeSignature, ...patch };
     
     // 1. 锁定当前小节的起始和结束物理时间
     let oldStartBeat = 0;
     for (let i = 0; i < idx; i++) oldStartBeat += prevMeasures[i].timeSignature.upper;
-    const oldEndBeat = oldStartBeat + prevMeasures[idx].timeSignature.upper;
+    const oldEndBeat = oldStartBeat + m.timeSignature.upper;
     
     const startTimeSec = beatToTime(oldStartBeat, project.sync);
     const endTimeSec = beatToTime(oldEndBeat, project.sync);
@@ -209,14 +254,15 @@ export const Timeline: FC<TimelineProps> = ({
     }
 
     for (let i = idx; i < nextMeasures.length; i++) {
-      const m = nextMeasures[i];
-      const mOldUpper = m.timeSignature.upper;
+      const curM = nextMeasures[i];
+      const mOldUpper = curM.timeSignature.upper;
+      const newUpper = nextTS.upper;
       nextMeasures[i] = {
-        ...m,
-        timeSignature: { ...m.timeSignature, upper },
-        events: m.events.map(e => ({
+        ...curM,
+        timeSignature: { ...curM.timeSignature, ...patch },
+        events: curM.events.map(e => ({
           ...e,
-          beatOffset: Number((e.beatOffset * (upper / mOldUpper)).toFixed(4))
+          beatOffset: Number((e.beatOffset * (newUpper / mOldUpper)).toFixed(4))
         }))
       };
     }
@@ -289,38 +335,12 @@ export const Timeline: FC<TimelineProps> = ({
               zIndex: 10,
             }}
           >
-            <div className="measure-info-box" style={{ top: 2, background: "rgba(0,0,0,0.8)" }} onClick={(e) => e.stopPropagation()}>
-              <span className="m-idx">第 {m.index} 小节</span>
-              {isChangePoint ? (
-                <>
-                  <div className="ts-select-container" title="修改此小节及之后所有小节的拍号">
-                    <select 
-                      className="ts-select"
-                      value={m.timeSignature.upper}
-                      onChange={(e) => updateTimeSignature(mIdx, Number(e.target.value))}
-                    >
-                      {[1,2,3,4,5,6,7,8,9,10,11,12].map(v => <option key={v} value={v}>{v}</option>)}
-                    </select>
-                  </div>
-                  <span className="ts-lower">/ {m.timeSignature.lower}</span>
-                  {!isFirst && (
-                    <button 
-                      className="ts-del-btn" 
-                      title="删除此拍号变更（跟随前一小节）"
-                      onClick={() => updateTimeSignature(mIdx, project.measures[mIdx-1].timeSignature.upper)}
-                    >
-                      ×
-                    </button>
-                  )}
-                </>
-              ) : (
-                <button 
-                  className="ts-add-btn" 
-                  title="在此处添加拍号变更"
-                  onClick={() => updateTimeSignature(mIdx, m.timeSignature.upper === 4 ? 3 : 4)}
-                >
-                  +
-                </button>
+            <div className="measure-info-box" style={{ top: 2, background: "rgba(0,0,0,0.8)", padding: "2px 4px", fontSize: "9px" }} onClick={(e) => e.stopPropagation()}>
+              <span className="m-idx">{m.index}</span>
+              {isChangePoint && (
+                <span className="ts-display" style={{ marginLeft: 4, opacity: 0.8, color: "var(--accent)" }}>
+                  {m.timeSignature.upper}/{m.timeSignature.lower}
+                </span>
               )}
             </div>
           </div>
@@ -770,8 +790,19 @@ export const Timeline: FC<TimelineProps> = ({
       >
         <div className="timeline-tracks-inner" style={{ width, position: "relative", minHeight: "100%" }}>
           {/* Ruler */}
-          <div className="timeline-ruler" style={{ height: 30, borderBottom: "1px solid #333", position: "relative" }}>
-            {renderRuler()}
+          <div className="timeline-ruler" style={{ height: 40, borderBottom: "1px solid #333", position: "relative", background: "#1a1a1a" }}>
+            {/* Time Ticks (Seconds) */}
+            <div className="time-ticks" style={{ position: "absolute", top: 0, left: 0, width: "100%", height: 20, pointerEvents: "none" }}>
+              {Array.from({ length: Math.ceil(maxTimeSec) + 1 }).map((_, i) => (
+                <div key={`sec-${i}`} style={{ position: "absolute", left: i * zoom, top: 0, height: 10, borderLeft: "1px solid rgba(255,255,255,0.2)", fontSize: 9, color: "#666", paddingLeft: 2 }}>
+                  {i}s
+                </div>
+              ))}
+            </div>
+            {/* Measure Ticks */}
+            <div className="measure-ticks" style={{ position: "absolute", bottom: 0, left: 0, width: "100%", height: 20 }}>
+              {renderRuler()}
+            </div>
           </div>
           
           {/* Audio Track (Waveform) */}
@@ -780,6 +811,7 @@ export const Timeline: FC<TimelineProps> = ({
             <div style={{ position: "absolute", width: "100%", height: "100%", background: "linear-gradient(to bottom, transparent, rgba(77, 144, 254, 0.05), transparent)" }}>
               <canvas 
                 ref={waveformCanvasRef} 
+                width={width}
                 style={{ position: "absolute", left: 0, top: 0, height: "100%" }} 
               />
             </div>

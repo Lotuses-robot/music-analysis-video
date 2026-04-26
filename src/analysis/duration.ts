@@ -49,11 +49,20 @@ export function getLastContentBeat(project: MusicAnalysisVideoProject): number {
 
 /**
  * 获取时间轴在同步时钟下的总秒数（不包含结尾留白）。
+ * 同时考虑乐谱内容时长与音频元数据时长。
  * @param project 项目数据
  * @returns 同步后的总时长（秒）
  */
 export function getSyncedEndSec(project: MusicAnalysisVideoProject): number {
-  return beatToTime(getLastContentBeat(project), project.sync);
+  const beatTime = beatToTime(getLastContentBeat(project), project.sync);
+  const audioFileDuration = project.meta.duration || 0;
+  const audioOffset = project.meta.audioStartOffsetSec || 0;
+  
+  // 实际在时间轴上可用的音频时长 = 总时长 - 起始偏移
+  const availableAudioDuration = Math.max(0, audioFileDuration - audioOffset);
+  
+  // 取乐谱内容时长与可用音频时长的最大值，确保两者都能完整显示
+  return Math.max(beatTime, availableAudioDuration);
 }
 
 /**

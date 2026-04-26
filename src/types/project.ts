@@ -128,6 +128,8 @@ export interface ProjectMeta {
   audioPath: string;
   /** 音频开始偏移量（秒）。 */
   audioStartOffsetSec?: number;
+  /** 音频总时长（秒），由 UI 导入时自动探测。 */
+  duration?: number;
   /** 仅用于 UI 显示的 BPM 提示；同步锚点才是计时的权威依据。 */
   bpmDisplayHint?: number;
 }

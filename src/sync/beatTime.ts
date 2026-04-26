@@ -1,11 +1,32 @@
 import type { ProjectSync, SyncAnchor } from "../types/project";
 
 function sortedAnchors(anchors: readonly SyncAnchor[]): SyncAnchor[] {
-  return [...anchors].sort((a, b) => a.beat - b.beat);
+  if (anchors.length === 0) return [];
+  // 1. 按拍数排序
+  const sorted = [...anchors].sort((a, b) => a.beat - b.beat);
+  
+  // 2. 去重并确保时间单调递增
+  const result: SyncAnchor[] = [sorted[0]];
+  for (let i = 1; i < sorted.length; i++) {
+    const prev = result[result.length - 1];
+    const curr = sorted[i];
+    
+    // 如果拍数相同，跳过（或者覆盖，这里选择跳过）
+    if (curr.beat <= prev.beat) continue;
+    
+    // 强制时间单调递增：当前点的时间不能早于前一个点
+    // 这解决了 project.json 中可能存在的错误数据导致的“排版炸裂”
+    const safeTime = Math.max(curr.timeSec, prev.timeSec);
+    result.push({ beat: curr.beat, timeSec: safeTime });
+  }
+  
+  return result;
 }
 
 function extrapolationMode(sync: ProjectSync): NonNullable<ProjectSync["extrapolation"]> {
-  return sync.extrapolation ?? "clamp";
+  // 强制使用 linear 外推，避免 clamp 模式导致音频末尾或开头的小节线重叠（排版炸裂）
+  // 即使 project.json 中设置了 clamp，在编辑器和渲染逻辑中也优先保证时间轴的连续性
+  return "linear";
 }
 
 /**
@@ -22,7 +43,10 @@ export function beatToTime(beat: number, sync: ProjectSync): number {
     throw new Error("sync.anchors must contain at least one point");
   }
   if (a.length === 1) {
-    return a[0].timeSec;
+    // 如果只有一个锚点，尝试根据 BPM 提示进行线性外推
+    const bpm = sync.bpmDisplayHint || 120;
+    const secondsPerBeat = 60 / bpm;
+    return a[0].timeSec + (beat - a[0].beat) * secondsPerBeat;
   }
 
   if (beat <= a[0].beat) {
@@ -67,7 +91,11 @@ export function timeToBeat(timeSec: number, sync: ProjectSync): number {
     throw new Error("sync.anchors must contain at least one point");
   }
   if (a.length === 1) {
-    return a[0].beat;
+    // 如果只有一个锚点，尝试根据 BPM 提示进行线性外推
+    const bpm = sync.bpmDisplayHint || 120;
+    const secondsPerBeat = 60 / bpm;
+    const beatsPerSecond = 1 / secondsPerBeat;
+    return a[0].beat + (timeSec - a[0].timeSec) * beatsPerSecond;
   }
 
   if (timeSec <= a[0].timeSec) {

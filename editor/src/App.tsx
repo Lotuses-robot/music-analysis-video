@@ -336,12 +336,22 @@ export const App: FC = () => {
   const onPickAudioFile = useCallback((file: File | undefined) => {
     if (!file) return;
     const url = URL.createObjectURL(file);
-    pushHistory({
-      ...project,
-      meta: {
-        ...project.meta,
-        audioPath: url
-      }
+    
+    // Create an audio object to get duration
+    const audio = new Audio(url);
+    audio.addEventListener("loadedmetadata", () => {
+      const duration = audio.duration;
+      pushHistory({
+        ...project,
+        meta: {
+          ...project.meta,
+          audioPath: url,
+          duration: duration // Automatically update duration
+        }
+      });
+      // Optionally seek to beginning
+      setCurrentTime(0);
+      setCurrentBeat(0);
     });
   }, [project, pushHistory]);
 
@@ -424,6 +434,9 @@ export const App: FC = () => {
               ↪️
             </button>
           </div>
+          <button className="btn btn--primary" onClick={() => audioFileInputRef.current?.click()} style={{ marginRight: 8 }}>
+            导入音频
+          </button>
           <button className="btn" onClick={() => setShowTapper(v => !v)}>
             {showTapper ? "关闭打拍器" : "打开打拍器"}
           </button>
@@ -502,6 +515,19 @@ export const App: FC = () => {
                     e.target.value = "";
                   }}
                 />
+              </div>
+              <div className="field">
+                <button className="btn btn--full" onClick={() => {
+                  const blob = new Blob([JSON.stringify(project, null, 2)], { type: "application/json" });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = `${project.meta.title || "project"}.json`;
+                  a.click();
+                  URL.revokeObjectURL(url);
+                }}>
+                  导出工程 (.json)
+                </button>
               </div>
               <div className="field">
                 <input
