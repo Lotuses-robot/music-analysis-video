@@ -9,6 +9,7 @@ import {
   keyAtBeat,
   timeSignatureAtBeat,
   flattenEvents,
+  getEmotionAtBeat,
 } from "../../src/analysis/selectors";
 import type { MusicAnalysisVideoProject } from "../../src/types/project";
 import { beatToTime } from "../../src/sync/beatTime";
@@ -102,6 +103,7 @@ export function buildFrameAnalysis(
     bpmHint: project.meta.bpmDisplayHint ?? null,
     emotionLinePath: lineD,
     playheadX,
+    currentEmotionValue: getEmotionAtBeat(project, beat),
     barNumber: barInfo.barNumber,
     beatInBar: barInfo.beatInBar,
     beatsPerBar: barInfo.beatsPerBar,

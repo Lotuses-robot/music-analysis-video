@@ -241,21 +241,11 @@ export const Timeline: FC<TimelineProps> = ({
       };
     }
 
-    // 3. 全局重映射同步锚点
-    const nextSync = {
-      ...tempSync,
-      anchors: remapSyncAfterTimeSignatureChange(
-        tempSync.anchors,
-        prevMeasures,
-        nextMeasures,
-        idx
-      )
-    };
-
+    // 强制触发更新，即使数据结构看起来相似
     onUpdateProject({
       ...project,
-      measures: nextMeasures,
-      sync: nextSync
+      measures: [...nextMeasures],
+      sync: { ...tempSync }
     });
   }, [project, onUpdateProject]);
 
@@ -298,38 +288,47 @@ export const Timeline: FC<TimelineProps> = ({
             <div 
               className="measure-info-box" 
               style={{ 
-                top: 2, 
-                background: "transparent", // 去掉背景挡道
+                bottom: 2, // 改为 bottom 靠下显示
+                background: "transparent", 
                 padding: "2px 4px", 
                 fontSize: "9px",
-                pointerEvents: "auto", // 内部允许点击
+                pointerEvents: "auto", 
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "flex-start",
                 gap: 2,
                 color: "rgba(255,255,255,0.5)",
-                textShadow: "0 0 2px black" // 增加阴影确保在透明背景下可见
+                textShadow: "0 0 2px black",
+                zIndex: 101 // 确保在小节线之上
               }} 
               onClick={(e) => e.stopPropagation()}
             >
-              <span className="m-idx">{m.index}</span>
+              <span className="m-idx" style={{ opacity: 0.8 }}>{m.index}</span>
               <div className="ts-edit-container" style={{ 
-                display: isChangePoint ? "inline-flex" : "none", // 默认不显示，除非是变更点
+                display: isChangePoint ? "inline-flex" : "none", 
                 alignItems: "center", 
                 gap: 2 
-              }}>
+              }}
+              onMouseDown={(e) => e.stopPropagation()} // 阻止拖拽寻求进度
+              >
                 <select 
                   value={m.timeSignature.upper} 
-                  onChange={(e) => updateTimeSignature(mIdx, { upper: Number(e.target.value) })}
-                  style={{ background: "rgba(51,51,51,0.6)", border: "none", color: "var(--accent)", fontSize: 9, borderRadius: 2, cursor: "pointer" }}
+                  onChange={(e) => {
+                    e.stopPropagation();
+                    updateTimeSignature(mIdx, { upper: Number(e.target.value) });
+                  }}
+                  style={{ background: "rgba(51,51,51,0.8)", border: "none", color: "var(--accent)", fontSize: 9, borderRadius: 2, cursor: "pointer", outline: "none" }}
                 >
                   {[2,3,4,5,6,7,8,9,12].map(n => <option key={n} value={n}>{n}</option>)}
                 </select>
                 <span style={{ opacity: 0.5 }}>/</span>
                 <select 
                   value={m.timeSignature.lower} 
-                  onChange={(e) => updateTimeSignature(mIdx, { lower: Number(e.target.value) })}
-                  style={{ background: "rgba(51,51,51,0.6)", border: "none", color: "var(--accent)", fontSize: 9, borderRadius: 2, cursor: "pointer" }}
+                  onChange={(e) => {
+                    e.stopPropagation();
+                    updateTimeSignature(mIdx, { lower: Number(e.target.value) });
+                  }}
+                  style={{ background: "rgba(51,51,51,0.8)", border: "none", color: "var(--accent)", fontSize: 9, borderRadius: 2, cursor: "pointer", outline: "none" }}
                 >
                   {[2,4,8,16].map(n => <option key={n} value={n}>{n}</option>)}
                 </select>
@@ -840,17 +839,21 @@ export const Timeline: FC<TimelineProps> = ({
       >
         <div className="timeline-tracks-inner" style={{ width, position: "relative", minHeight: "100%" }}>
           {/* Ruler */}
-          <div className="timeline-ruler" style={{ height: 40, borderBottom: "1px solid #333", position: "relative", background: "#1a1a1a" }}>
+          <div className="timeline-ruler" style={{ height: 50, borderBottom: "1px solid #333", position: "relative", background: "#1a1a1a" }}>
             {/* Time Ticks (Seconds) */}
             <div className="time-ticks" style={{ position: "absolute", top: 0, left: 0, width: "100%", height: 20, pointerEvents: "none" }}>
               {Array.from({ length: Math.ceil(maxTimeSec) + 1 }).map((_, i) => (
-                <div key={`sec-${i}`} style={{ position: "absolute", left: i * zoom, top: 0, height: 10, borderLeft: "1px solid rgba(255,255,255,0.2)", fontSize: 9, color: "#666", paddingLeft: 2 }}>
+                <div key={`sec-${i}`} style={{ position: "absolute", left: i * zoom, top: 0, height: 8, borderLeft: "1px solid rgba(255,255,255,0.2)", fontSize: 9, color: "#666", paddingLeft: 2 }}>
                   {i}s
                 </div>
               ))}
             </div>
+            
+            {/* 分隔线 */}
+            <div style={{ position: "absolute", top: 22, left: 0, width: "100%", height: 1, background: "rgba(255,255,255,0.2)", boxShadow: "0 0 4px rgba(0,0,0,0.5)" }} />
+
             {/* Measure Ticks */}
-            <div className="measure-ticks" style={{ position: "absolute", bottom: 0, left: 0, width: "100%", height: 20 }}>
+            <div className="measure-ticks" style={{ position: "absolute", top: 24, bottom: 0, left: 0, width: "100%" }}>
               {renderRuler()}
             </div>
           </div>

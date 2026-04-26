@@ -75,6 +75,7 @@ export type FrameAnalysis = {
   bpmHint: number | null;
   emotionLinePath: string;
   playheadX: number;
+  currentEmotionValue: number;
   barNumber: number;
   beatInBar: number;
   beatsPerBar: number;

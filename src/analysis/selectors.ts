@@ -196,3 +196,28 @@ export function getBarInfo(project: MusicAnalysisVideoProject, beat: number): Ba
     beatsPerBar: last.timeSignature.upper,
   };
 }
+
+/**
+ * 获取当前拍数下的线性插值情感温度。
+ * @param project 项目数据
+ * @param beat 当前绝对拍数
+ * @returns 情感温度值 (通常在 60-72 之间，或根据项目设定)
+ */
+export function getEmotionAtBeat(project: MusicAnalysisVideoProject, beat: number): number {
+  const points = flattenEvents(project, (e) => e.type === "emotion")
+    .map((e) => ({ beat: e.beat, val: e.event.value as number }));
+    
+  if (points.length === 0) return 66; // 默认中等温度
+  if (points.length === 1) return points[0].val;
+  
+  // 寻找前后的锚点
+  const nextIdx = points.findIndex(p => p.beat > beat);
+  if (nextIdx === -1) return points[points.length - 1].val;
+  if (nextIdx === 0) return points[0].val;
+  
+  const prev = points[nextIdx - 1];
+  const next = points[nextIdx];
+  
+  const ratio = (beat - prev.beat) / (next.beat - prev.beat);
+  return prev.val + (next.val - prev.val) * ratio;
+}

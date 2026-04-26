@@ -3,6 +3,22 @@ import { spring, useCurrentFrame, useVideoConfig } from "remotion";
 import { beatToTime } from "../../src/sync/beatTime";
 import { getActiveChord } from "../../src/analysis/selectors";
 import type { AnalysisLayoutProps } from "../theme/types";
+import { interpolateColors } from "remotion";
+
+/**
+ * 映射情感温度到颜色
+ */
+const getEmotionColor = (value: number, baseAccent: string) => {
+  // Normalize value to 0-1 range (assuming 60-72 range)
+  const normalized = Math.max(0, Math.min(1, (value - 60) / 12));
+  
+  // Define a gradient: Cold (Blue) -> Neutral (Accent) -> Hot (Red)
+  return interpolateColors(
+    normalized,
+    [0, 0.5, 1],
+    ["#4D90FE", baseAccent, "#FF4D4D"]
+  );
+};
 
 /**
  * 基于主题的分析布局组件。
@@ -16,6 +32,8 @@ export const ThemedAnalysisLayout: FC<AnalysisLayoutProps> = ({ project, theme, 
   const { colors, pad, gap, chartWidth, chartHeight, layout, type, fontFamily } = theme;
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
+
+  const accentColor = getEmotionColor(analysis.currentEmotionValue, colors.accent);
 
   // Find the beat of the active chord to calculate its start frame
   const activeChord = getActiveChord(project, analysis.beat);
@@ -44,46 +62,56 @@ export const ThemedAnalysisLayout: FC<AnalysisLayoutProps> = ({ project, theme, 
     >
       <header style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "16px" }}>
         <div>
-          <div style={{ fontSize: `${type.title}px`, fontWeight: 700, letterSpacing: "-0.02em" }}>{project.meta.title}</div>
+          <div style={{ fontSize: `${type.title}px`, fontWeight: 800, letterSpacing: "-0.03em" }}>{project.meta.title}</div>
           {project.meta.artist ? (
-            <div style={{ fontSize: `${type.artist}px`, color: colors.textMuted, marginTop: "4px" }}>{project.meta.artist}</div>
+            <div style={{ fontSize: `${type.artist}px`, color: colors.textMuted, marginTop: "2px", fontWeight: 500 }}>{project.meta.artist}</div>
           ) : null}
         </div>
-        <div style={{ textAlign: "right", fontSize: `${type.meta}px`, color: colors.textMuted, lineHeight: 1.5 }}>
-          <div>{analysis.timeSignatureLabel}</div>
-          <div>{analysis.keyLabel}</div>
-          {analysis.bpmHint !== null ? <div>~{analysis.bpmHint} BPM</div> : null}
+        <div style={{ textAlign: "right", fontSize: `${type.meta}px`, color: colors.textMuted, lineHeight: 1.4 }}>
+          <div style={{ fontWeight: 700, color: colors.text }}>{analysis.timeSignatureLabel}</div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "6px" }}>
+            <span style={{ fontSize: "10px", opacity: 0.5 }}>TONALITY</span>
+            <span style={{ color: accentColor, fontWeight: 800 }}>{analysis.keyLabel}</span>
+          </div>
+          {analysis.bpmHint !== null ? <div style={{ fontSize: "11px", opacity: 0.6 }}>{analysis.bpmHint} BPM</div> : null}
         </div>
       </header>
 
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", gap: "24px" }}>
-        <div style={{ display: "flex", alignItems: "baseline", gap: "16px" }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", gap: "32px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
           <div
             style={{
               fontSize: `${type.chord}px`,
               fontWeight: 900,
-              letterSpacing: "-0.04em",
-              color: colors.accent,
+              letterSpacing: "-0.05em",
+              color: accentColor,
               lineHeight: 1,
-              transform: `scale(${0.98 + 0.04 * chordSpring})`,
+              transform: `scale(${0.97 + 0.06 * chordSpring})`,
               opacity: 0.9 + 0.1 * chordSpring,
-              textShadow: `0 0 20px ${colors.accent}33`,
+              textShadow: `0 0 30px ${accentColor}44`,
+              transition: "color 0.4s ease",
             }}
           >
             {analysis.chordSymbol}
           </div>
-          <div
-            style={{
-              fontSize: `${type.meta}px`,
-              fontWeight: 700,
-              padding: "4px 10px",
-              background: colors.accent,
-              borderRadius: "4px",
-              boxShadow: `0 0 15px ${colors.accent}44`,
-              color: colors.background,
-            }}
-          >
-            BAR {analysis.barNumber}
+          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+            <div
+              style={{
+                fontSize: `${type.meta}px`,
+                fontWeight: 800,
+                padding: "2px 8px",
+                background: accentColor,
+                borderRadius: "2px",
+                color: colors.background,
+                width: "fit-content",
+                transition: "background-color 0.4s ease",
+              }}
+            >
+              BAR {analysis.barNumber}
+            </div>
+            <div style={{ fontSize: "12px", color: colors.textMuted, fontWeight: 600 }}>
+              BEAT {Math.floor(analysis.beatInBar)} / {analysis.beatsPerBar}
+            </div>
           </div>
         </div>
 
@@ -93,11 +121,10 @@ export const ThemedAnalysisLayout: FC<AnalysisLayoutProps> = ({ project, theme, 
             style={{
               display: "flex",
               flexWrap: "wrap",
-              gap: "12px",
-              padding: "16px",
-              background: colors.sectionBackground,
-              borderRadius: `${layout.sectionRadiusPx}px`,
-              border: `1px solid ${colors.chartSurface}`,
+              gap: "8px",
+              padding: "12px 0",
+              borderTop: `1px solid ${colors.chartSurface}`,
+              borderBottom: `1px solid ${colors.chartSurface}`,
             }}
           >
             {analysis.sectionChords.map((c, i) => (
@@ -105,14 +132,11 @@ export const ThemedAnalysisLayout: FC<AnalysisLayoutProps> = ({ project, theme, 
                 key={`${c.beat}-${i}`}
                 style={{
                   fontSize: `${type.sectionBody}px`,
-                  fontWeight: c.isActive ? 700 : 500,
-                  color: c.isActive ? colors.accent : colors.textMuted,
-                  padding: "4px 12px",
-                  borderRadius: "6px",
-                  background: c.isActive ? colors.chartSurface : "transparent",
-                  transform: c.isActive ? `scale(1.1)` : "scale(1)",
+                  fontWeight: c.isActive ? 800 : 400,
+                  color: c.isActive ? accentColor : colors.textMuted,
+                  padding: "4px 8px",
                   transition: "all 0.2s ease-out",
-                  border: c.isActive ? `1px solid ${colors.accent}44` : "1px solid transparent",
+                  borderBottom: c.isActive ? `2px solid ${accentColor}` : "2px solid transparent",
                 }}
               >
                 {c.symbol}
@@ -120,34 +144,26 @@ export const ThemedAnalysisLayout: FC<AnalysisLayoutProps> = ({ project, theme, 
             ))}
           </div>
         )}
-
-        {analysis.nextChordSymbol && !analysis.sectionChords.length ? (
-          <div style={{ fontSize: `${type.chordNext}px`, color: colors.textMuted }}>
-            下一和弦 <span style={{ color: colors.text }}>{analysis.nextChordSymbol}</span>
-          </div>
-        ) : null}
       </div>
 
       {analysis.sectionLabel ? (
         <div
           style={{
-            borderLeft: `${layout.sectionBorderLeftPx}px solid ${colors.accent}`,
-            paddingLeft: `${layout.sectionPaddingPx + 2}px`,
-            background: colors.sectionBackground,
-            borderRadius: `${layout.sectionRadiusPx}px`,
-            paddingTop: `${layout.sectionPaddingPx}px`,
-            paddingBottom: `${layout.sectionPaddingPx}px`,
-            paddingRight: `${layout.sectionPaddingPx}px`,
-            marginBottom: analysis.sectionComment ? "8px" : "0",
+            background: `${accentColor}11`,
+            borderLeft: `2px solid ${accentColor}`,
+            padding: "8px 12px",
+            borderRadius: "0 4px 4px 0",
+            marginBottom: analysis.sectionComment ? "12px" : "0",
+            transition: "all 0.4s ease",
           }}
         >
           <div
             style={{
               fontSize: `${type.sectionLabel}px`,
-              color: colors.textMuted,
+              color: accentColor,
               textTransform: "uppercase",
-              fontWeight: 700,
-              letterSpacing: "0.1em",
+              fontWeight: 800,
+              letterSpacing: "0.15em",
             }}
           >
             {analysis.sectionLabel}
@@ -155,56 +171,63 @@ export const ThemedAnalysisLayout: FC<AnalysisLayoutProps> = ({ project, theme, 
         </div>
       ) : null}
 
-      <div
-        style={{
-          fontSize: `${analysis.sectionCommentStyle?.fontSize || type.sectionBody}px`,
-          fontFamily: analysis.sectionCommentStyle?.fontFamily || "Inter",
-          lineHeight: 1.5,
-          color: colors.text,
-          padding: "12px 16px",
-          background: colors.sectionBackground || "rgba(255,255,255,0.03)",
-          borderRadius: "8px",
-          borderLeft: `3px solid ${analysis.sectionComment ? colors.accent : colors.textMuted + "44"}`,
-          minHeight: "5em", // Standardized height for analysis text
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          transition: "all 0.3s ease",
-          opacity: analysis.sectionComment ? 1 : 0.4,
-        }}
-      >
-        <div style={{ fontSize: "11px", color: colors.textMuted, textTransform: "uppercase", marginBottom: "4px", fontWeight: 700, letterSpacing: "0.05em" }}>
-          音乐赏析
+      {analysis.sectionComment ? (
+        <div
+          style={{
+            fontSize: `${analysis.sectionCommentStyle?.fontSize || type.sectionBody}px`,
+            fontFamily: analysis.sectionCommentStyle?.fontFamily || fontFamily,
+            lineHeight: 1.6,
+            color: colors.text,
+            padding: "16px",
+            background: "rgba(255,255,255,0.02)",
+            borderRadius: "4px",
+            border: `1px solid ${colors.chartSurface}`,
+            minHeight: "6em",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            transition: "all 0.3s ease",
+          }}
+        >
+          <div style={{ fontSize: "10px", color: colors.textMuted, textTransform: "uppercase", marginBottom: "8px", fontWeight: 800, letterSpacing: "0.1em" }}>
+            ANALYTIC INSIGHT
+          </div>
+          <div style={{ flex: 1, fontWeight: 400, opacity: 0.9 }}>
+            {analysis.sectionComment}
+          </div>
         </div>
-        <div style={{ flex: 1 }}>
-          {analysis.sectionComment || ""}
-        </div>
-      </div>
+      ) : (
+        <div style={{ minHeight: "6em" }} />
+      )}
 
-      <div style={{ marginTop: "auto" }}>
-        <div style={{ fontSize: `${type.chartCaption}px`, color: colors.textMuted, marginBottom: "6px" }}>情感线（示意）</div>
-        <svg width={chartWidth} height={chartHeight} style={{ display: "block" }}>
-          <rect width={chartWidth} height={chartHeight} rx={layout.chartRadiusPx} fill={colors.chartSurface} />
+      <div style={{ marginTop: "24px" }}>
+        <svg width={chartWidth} height={chartHeight} style={{ display: "block", overflow: "visible" }}>
+          <rect width={chartWidth} height={chartHeight} rx={2} fill={colors.chartSurface} />
           {analysis.emotionLinePath ? (
             <path
               d={analysis.emotionLinePath}
               fill="none"
-              stroke={colors.accent}
-              strokeWidth={layout.emotionStrokePx}
+              stroke={accentColor}
+              strokeWidth={2}
               strokeLinecap="round"
               strokeLinejoin="round"
+              style={{ transition: "stroke 0.4s ease" }}
             />
           ) : null}
           <line
             x1={analysis.playheadX}
             x2={analysis.playheadX}
-            y1={4}
-            y2={chartHeight - 4}
+            y1={-4}
+            y2={chartHeight + 4}
             stroke={colors.text}
-            strokeWidth={layout.playheadStrokePx}
-            opacity={0.85}
+            strokeWidth={2}
+            opacity={0.8}
           />
         </svg>
+        <div style={{ display: "flex", justifyContent: "space-between", marginTop: "6px" }}>
+          <span style={{ fontSize: "9px", color: colors.textMuted, fontWeight: 700, letterSpacing: "0.05em" }}>EMOTIONAL TEMPERATURE</span>
+          <span style={{ fontSize: "9px", color: accentColor, fontWeight: 800 }}>{Math.round(analysis.currentEmotionValue)}°</span>
+        </div>
       </div>
 
       {project.style?.footerText ? (
