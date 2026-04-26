@@ -42,8 +42,8 @@ export function useAudioBuffer(audioPath: string | undefined) {
         return res.arrayBuffer();
       })
       .then(async buffer => {
-        const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-        const ctx = new AudioCtx();
+        const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        const ctx = new AudioContextClass();
         try {
           const decodedBuffer = await ctx.decodeAudioData(buffer);
           audioBufferCache.set(url, decodedBuffer);

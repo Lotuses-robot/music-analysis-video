@@ -254,10 +254,7 @@ export const AdvancedTapper: FC<AdvancedTapperProps> = ({ project, onUpdateProje
     }]);
   }, [localMeasures]);
 
-  const handleDeleteLastMeasure = useCallback(() => {
-    if (localMeasures.length === 0) return;
-    handleDeleteMeasure(localMeasures.length - 1);
-  }, [localMeasures.length, handleDeleteMeasure]);
+  // 移除 handleDeleteLastMeasure，因为它被标记为未使用，且功能可由 handleDeleteMeasureAtCursor 覆盖
 
   const applySync = useCallback(() => {
     const existingAnchors = project.sync.anchors;
@@ -370,8 +367,7 @@ export const AdvancedTapper: FC<AdvancedTapperProps> = ({ project, onUpdateProje
 
       if (analyserRef.current && dataArrayRef.current && !audioRef.current.paused) {
         const data = dataArrayRef.current;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        analyserRef.current.getByteFrequencyData(data as any);
+        analyserRef.current.getByteFrequencyData(data);
         const avg = data.reduce((a, b) => a + b, 0) / data.length;
         const idx = Math.floor(time * 60);
         if (!loudnessHistoryRef.current[idx]) loudnessHistoryRef.current[idx] = avg;
@@ -391,8 +387,8 @@ export const AdvancedTapper: FC<AdvancedTapperProps> = ({ project, onUpdateProje
   useEffect(() => {
     if (!audioRef.current || sourceConnectedRef.current) return;
     try {
-      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-      const audioCtx = new AudioCtx();
+      const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      const audioCtx = new AudioContextClass();
       const source = audioCtx.createMediaElementSource(audioRef.current);
       const analyser = audioCtx.createAnalyser();
       analyser.fftSize = 256;
@@ -508,7 +504,7 @@ export const AdvancedTapper: FC<AdvancedTapperProps> = ({ project, onUpdateProje
             <button className="btn" onClick={togglePlay}>
               {isPlaying ? "暂停 (Space)" : "播放 (Space)"}
             </button>
-            <button className="btn" onClick={() => { audioRef.current && (audioRef.current.currentTime = 0); }}>
+            <button className="btn" onClick={() => { if (audioRef.current) audioRef.current.currentTime = 0; }}>
               重置播放
             </button>
             <div style={{ width: 1, height: 20, background: "#444", margin: "0 5px" }} />

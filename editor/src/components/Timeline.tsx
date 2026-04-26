@@ -99,7 +99,6 @@ export const Timeline: FC<TimelineProps> = ({
     const audioStartOffset = project.meta.audioStartOffsetSec || 0;
     
     // 1像素对应的采样数 = 采样率 / 缩放倍率 (samples/sec / pixels/sec = samples/pixel)
-    const samplesPerPixel = sampleRate / zoom;
     const amp = h / 2;
 
     ctx.fillStyle = "rgba(77, 144, 254, 0.4)";
@@ -226,7 +225,6 @@ export const Timeline: FC<TimelineProps> = ({
     lockAnchor(tempSync, oldEndBeat, endTimeSec);
 
     // 2. 更新小节拍号和内部事件位移
-    const oldUpper = m.timeSignature.upper;
     const newUpper = nextTS.upper;
     
     for (let i = idx; i < nextMeasures.length; i++) {

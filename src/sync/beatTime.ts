@@ -23,7 +23,7 @@ function sortedAnchors(anchors: readonly SyncAnchor[]): SyncAnchor[] {
   return result;
 }
 
-function extrapolationMode(sync: ProjectSync): NonNullable<ProjectSync["extrapolation"]> {
+function extrapolationMode(_sync: ProjectSync): NonNullable<ProjectSync["extrapolation"]> {
   // 强制使用 linear 外推，避免 clamp 模式导致音频末尾或开头的小节线重叠（排版炸裂）
   // 即使 project.json 中设置了 clamp，在编辑器和渲染逻辑中也优先保证时间轴的连续性
   return "linear";
@@ -137,12 +137,16 @@ export function beatToFrame(beat: number, sync: ProjectSync, fps: number): numbe
 
 /**
  * 当拍号改变时，重新映射同步锚点以保持物理时间对齐。
+ * @param anchors - 原始同步锚点列表
+ * @param oldMeasures - 变更前的小节列表
+ * @param newMeasures - 变更后的小节列表
+ * @param _changeIdx - 变更起始的小节索引（目前逻辑为全量重算，暂未使用此索引）
  */
 export function remapSyncAfterTimeSignatureChange(
   anchors: SyncAnchor[],
   oldMeasures: { timeSignature: { upper: number } }[],
   newMeasures: { timeSignature: { upper: number } }[],
-  changeIdx: number
+  _changeIdx: number
 ): SyncAnchor[] {
   // 1. 计算旧/新每小节的起始绝对拍数
   const oldStarts = [0];
