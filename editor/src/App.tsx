@@ -1,6 +1,6 @@
 import type { FC } from "react";
 import { useCallback, useMemo, useRef, useState, useEffect } from "react";
-import exampleJson from "../../examples/example.project.json" with { type: "json" };
+import defaultProjectJson from "../../examples/project.json" with { type: "json" };
 import type { MusicAnalysisVideoProject, MeasureEvent } from "../../src/types/project";
 import { PreviewPanel } from "./components/PreviewPanel";
 import { ProjectForm } from "./components/ProjectForm";
@@ -14,7 +14,7 @@ import { getContentEndSec } from "../../src/analysis/duration";
 import { keyAtBeat } from "../../src/analysis/selectors";
 import type { PlayerRef } from "@remotion/player";
 
-const defaultProject = exampleJson as MusicAnalysisVideoProject;
+const defaultProject = defaultProjectJson as MusicAnalysisVideoProject;
 
 /**
  * 音乐分析视频编辑器主应用组件。
@@ -715,6 +715,26 @@ export const App: FC = () => {
             onClick={() => setSelectedTool("delete")}
           >
             🗑️
+          </button>
+          
+          <div style={{ width: 1, height: 20, background: "#333", margin: "4px 0" }} />
+          
+          <button 
+            className="btn btn--icon" 
+            title="在末尾添加新小节"
+            onClick={() => {
+              const lastTS = project.measures.length > 0 ? project.measures[project.measures.length - 1].timeSignature : { upper: 4, lower: 4 };
+              onUpdateProjectWithBeatPreservation({
+                ...project,
+                measures: [...project.measures, {
+                  index: project.measures.length + 1,
+                  timeSignature: { ...lastTS },
+                  events: []
+                }]
+              });
+            }}
+          >
+            ➕🔲
           </button>
         </aside>
         

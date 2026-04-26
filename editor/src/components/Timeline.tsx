@@ -277,8 +277,10 @@ export const Timeline: FC<TimelineProps> = ({
         const mStartSec = beatToTime(currentBeatAcc, project.sync);
         
         const isFirst = mIdx === 0;
-        const prevTS = !isFirst ? project.measures[mIdx-1].timeSignature.upper : null;
-        const isChangePoint = isFirst || m.timeSignature.upper !== prevTS;
+        const prevM = !isFirst ? project.measures[mIdx - 1] : null;
+        const isChangePoint = isFirst || 
+          m.timeSignature.upper !== prevM?.timeSignature.upper || 
+          m.timeSignature.lower !== prevM?.timeSignature.lower;
 
         // 绘制小节线
         ticks.push(
@@ -291,16 +293,49 @@ export const Timeline: FC<TimelineProps> = ({
               bottom: 0,
               width: 1,
               background: "rgba(255,255,255,0.15)",
-              zIndex: 10,
+              zIndex: 100, // 提升层级到事件之上
+              pointerEvents: "none", // 让小节线本身不挡点击
             }}
           >
-            <div className="measure-info-box" style={{ top: 2, background: "rgba(0,0,0,0.8)", padding: "2px 4px", fontSize: "9px" }} onClick={(e) => e.stopPropagation()}>
+            <div 
+              className="measure-info-box" 
+              style={{ 
+                top: 2, 
+                background: "transparent", // 去掉背景挡道
+                padding: "2px 4px", 
+                fontSize: "9px",
+                pointerEvents: "auto", // 内部允许点击
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "flex-start",
+                gap: 2,
+                color: "rgba(255,255,255,0.5)",
+                textShadow: "0 0 2px black" // 增加阴影确保在透明背景下可见
+              }} 
+              onClick={(e) => e.stopPropagation()}
+            >
               <span className="m-idx">{m.index}</span>
-              {isChangePoint && (
-                <span className="ts-display" style={{ marginLeft: 4, opacity: 0.8, color: "var(--accent)" }}>
-                  {m.timeSignature.upper}/{m.timeSignature.lower}
-                </span>
-              )}
+              <div className="ts-edit-container" style={{ 
+                display: isChangePoint ? "inline-flex" : "none", // 默认不显示，除非是变更点
+                alignItems: "center", 
+                gap: 2 
+              }}>
+                <select 
+                  value={m.timeSignature.upper} 
+                  onChange={(e) => updateTimeSignature(mIdx, { upper: Number(e.target.value) })}
+                  style={{ background: "rgba(51,51,51,0.6)", border: "none", color: "var(--accent)", fontSize: 9, borderRadius: 2, cursor: "pointer" }}
+                >
+                  {[2,3,4,5,6,7,8,9,12].map(n => <option key={n} value={n}>{n}</option>)}
+                </select>
+                <span style={{ opacity: 0.5 }}>/</span>
+                <select 
+                  value={m.timeSignature.lower} 
+                  onChange={(e) => updateTimeSignature(mIdx, { lower: Number(e.target.value) })}
+                  style={{ background: "rgba(51,51,51,0.6)", border: "none", color: "var(--accent)", fontSize: 9, borderRadius: 2, cursor: "pointer" }}
+                >
+                  {[2,4,8,16].map(n => <option key={n} value={n}>{n}</option>)}
+                </select>
+              </div>
             </div>
           </div>
         );
@@ -326,6 +361,40 @@ export const Timeline: FC<TimelineProps> = ({
         }
         currentBeatAcc += mLen;
       }
+
+      // 绘制末尾的“添加小节”按钮
+      const lastBeatSec = beatToTime(currentBeatAcc, project.sync);
+      ticks.push(
+        <div
+          key="add-measure-btn"
+          style={{
+            position: "absolute",
+            left: lastBeatSec * zoom + 5,
+            top: 2,
+            zIndex: 20,
+          }}
+        >
+          <button 
+            className="btn btn--small" 
+            style={{ padding: "0 4px", fontSize: 10, background: "rgba(255,255,255,0.1)" }}
+            onClick={(e) => {
+              e.stopPropagation();
+              const lastTS = project.measures.length > 0 ? project.measures[project.measures.length - 1].timeSignature : { upper: 4, lower: 4 };
+              onUpdateProject({
+                ...project,
+                measures: [...project.measures, {
+                  index: project.measures.length + 1,
+                  timeSignature: { ...lastTS },
+                  events: []
+                }]
+              });
+            }}
+            title="在末尾添加小节"
+          >
+            ➕
+          </button>
+        </div>
+      );
     }
 
     return ticks;
@@ -646,15 +715,38 @@ export const Timeline: FC<TimelineProps> = ({
    */
   const renderComments = () => {
     const comments = flattenEvents(project, (e) => e.type === "comment");
+    
+    // 处理自动分块布局逻辑
+    const lanes: { endX: number }[] = [];
+    const commentItems = comments.map(c => {
+      const x = beatToTime(c.beat, project.sync) * zoom;
+      // 估算宽度：图标(16px) + 文字长度 * 约6px + 左右padding(16px)
+      const estimatedWidth = 32 + (String(c.event.value).length * 6);
+      
+      // 寻找第一个可用的轨道(lane)
+      let laneIndex = lanes.findIndex(l => x >= l.endX + 10);
+      if (laneIndex === -1) {
+        laneIndex = lanes.length;
+        lanes.push({ endX: x + estimatedWidth });
+      } else {
+        lanes[laneIndex].endX = x + estimatedWidth;
+      }
+      
+      return { ...c, x, laneIndex };
+    });
+
+    const laneHeight = 24;
+    const totalHeight = Math.max(1, lanes.length) * laneHeight + 20;
+
     return (
       <div 
         className="timeline-track comment-track"
         onClick={(e) => handleTrackClick(e, "comment")}
         onDoubleClick={(e) => handleTrackDoubleClick(e, "comment")}
+        style={{ height: totalHeight }}
       >
         <div className="track-label">备注</div>
-        {comments.map((c, i) => {
-          const sec = beatToTime(c.beat, project.sync);
+        {commentItems.map((c, i) => {
           return (
             <div
               key={`comment-${i}`}
@@ -666,8 +758,9 @@ export const Timeline: FC<TimelineProps> = ({
               onDoubleClick={(e) => handleEventDoubleClick(e, c.mIndex, c.eIndex)}
               style={{
                 position: "absolute",
-                left: sec * zoom,
-                height: "70%",
+                left: c.x,
+                top: c.laneIndex * laneHeight + 4,
+                height: laneHeight - 4,
                 padding: "0 8px",
                 background: "rgba(255,255,255,0.05)",
                 borderLeft: "2px solid #888",
@@ -794,7 +887,7 @@ export const Timeline: FC<TimelineProps> = ({
               width: 2,
               height: "100%",
               background: "var(--accent)",
-              zIndex: 100,
+              zIndex: 1000,
               pointerEvents: "none",
             }}
           >

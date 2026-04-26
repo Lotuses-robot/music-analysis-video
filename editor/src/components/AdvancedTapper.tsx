@@ -532,6 +532,14 @@ export const AdvancedTapper: FC<AdvancedTapperProps> = ({ project, onUpdateProje
             
             <button 
               className="btn" 
+              onClick={handleAddMeasure}
+              title="在项目末尾添加一个新小节"
+            >
+              ➕ 末尾添加小节
+            </button>
+            
+            <button 
+              className="btn" 
               onClick={handleDeleteMeasureAtCursor}
               style={{ color: "#ff4d4f" }}
               title="删除当前光标所在的小节"
