@@ -221,3 +221,59 @@ export function getEmotionAtBeat(project: MusicAnalysisVideoProject, beat: numbe
   const ratio = (beat - prev.beat) / (next.beat - prev.beat);
   return prev.val + (next.val - prev.val) * ratio;
 }
+
+/**
+ * 计算和弦相对于调性的级数。
+ * @param keyRoot 调性根音 (如 "C", "F#")
+ * @param chordSymbol 和弦符号 (如 "Cmaj7", "Am")
+ * @returns 级数符号 (如 "I", "vi")
+ */
+export function getChordDegree(keyRoot: string, chordSymbol: string): string {
+  if (!keyRoot || !chordSymbol) return "";
+
+  const notes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+  const flatMap: Record<string, string> = { "Db": "C#", "Eb": "D#", "Gb": "F#", "Ab": "G#", "Bb": "A#" };
+
+  const normalize = (n: string) => flatMap[n] || n;
+
+  // 提取和弦根音
+  const chordRootMatch = chordSymbol.match(/^([A-G][#b]?)/);
+  if (!chordRootMatch) return "";
+  const chordRoot = normalize(chordRootMatch[1]);
+  const chordSuffix = chordSymbol.slice(chordRootMatch[1].length);
+
+  // 提取调性根音
+  const keyRootNorm = normalize(keyRoot);
+
+  const keyIdx = notes.indexOf(keyRootNorm);
+  const chordIdx = notes.indexOf(chordRoot);
+
+  if (keyIdx === -1 || chordIdx === -1) return chordSymbol;
+
+  const semitones = (chordIdx - keyIdx + 12) % 12;
+  const degrees = [
+    { semitones: 0, roman: "I" },
+    { semitones: 1, roman: "bII" },
+    { semitones: 2, roman: "II" },
+    { semitones: 3, roman: "bIII" },
+    { semitones: 4, roman: "III" },
+    { semitones: 5, roman: "IV" },
+    { semitones: 6, roman: "bV" },
+    { semitones: 7, roman: "V" },
+    { semitones: 8, roman: "bVI" },
+    { semitones: 9, roman: "VI" },
+    { semitones: 10, roman: "bVII" },
+    { semitones: 11, roman: "VII" },
+  ];
+
+  const degree = degrees.find(d => d.semitones === semitones);
+  if (!degree) return chordSymbol;
+
+  // 处理大小调风格：如果和弦是小调 (m, m7, dim)，级数通常用小写，但这里简单起见统一用大写加后缀
+  let roman = degree.roman;
+  if (chordSuffix.startsWith("m") && !chordSuffix.startsWith("maj")) {
+    roman = roman.toLowerCase();
+  }
+
+  return roman + chordSuffix.replace(/^m/, "");
+}

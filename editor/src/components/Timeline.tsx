@@ -200,52 +200,37 @@ export const Timeline: FC<TimelineProps> = ({
     const m = prevMeasures[idx];
     const nextTS = { ...m.timeSignature, ...patch };
     
-    // 1. 锁定当前小节的起始和结束物理时间
-    let oldStartBeat = 0;
-    for (let i = 0; i < idx; i++) oldStartBeat += prevMeasures[i].timeSignature.upper;
-    const oldEndBeat = oldStartBeat + m.timeSignature.upper;
-    
-    const startTimeSec = beatToTime(oldStartBeat, project.sync);
-    const endTimeSec = beatToTime(oldEndBeat, project.sync);
-    
-    const tempSync = { ...project.sync, anchors: [...project.sync.anchors] };
-    
-    // 插入时间锚点锁
-    const lockAnchor = (sync: { anchors: SyncAnchor[] }, beat: number, time: number) => {
-      const existing = sync.anchors.find((a: SyncAnchor) => Math.abs(a.beat - beat) < 0.001);
-      if (existing) {
-        existing.timeSec = time;
-      } else {
-        sync.anchors.push({ beat, timeSec: time });
-      }
-      sync.anchors.sort((a: SyncAnchor, b: SyncAnchor) => a.beat - b.beat);
+    // 1. 更新当前小节拍号
+    nextMeasures[idx] = {
+      ...m,
+      timeSignature: nextTS,
     };
 
-    lockAnchor(tempSync, oldStartBeat, startTimeSec);
-    lockAnchor(tempSync, oldEndBeat, endTimeSec);
+    // 2. 使用重映射工具处理同步锚点，确保所有后续内容在物理时间上对齐
+    const nextAnchors = remapSyncAfterTimeSignatureChange(
+      project.sync.anchors,
+      prevMeasures,
+      nextMeasures,
+      idx
+    );
 
-    // 2. 更新小节拍号和内部事件位移
+    // 3. 处理当前小节内事件的位移（可选，通常建议保持相对位置）
+    const oldUpper = m.timeSignature.upper;
     const newUpper = nextTS.upper;
-    
-    for (let i = idx; i < nextMeasures.length; i++) {
-      const curM = nextMeasures[i];
-      const mOldUpper = curM.timeSignature.upper;
-      const curNewUpper = (i === idx) ? newUpper : mOldUpper;
-      nextMeasures[i] = {
-        ...curM,
-        timeSignature: (i === idx) ? nextTS : curM.timeSignature,
-        events: curM.events.map(e => ({
-          ...e,
-          beatOffset: Number((e.beatOffset * (curNewUpper / mOldUpper)).toFixed(4))
-        }))
-      };
+    if (oldUpper !== newUpper) {
+      nextMeasures[idx].events = m.events.map(e => ({
+        ...e,
+        beatOffset: Number((e.beatOffset * (newUpper / oldUpper)).toFixed(4))
+      }));
     }
 
-    // 强制触发更新，即使数据结构看起来相似
     onUpdateProject({
       ...project,
-      measures: [...nextMeasures],
-      sync: { ...tempSync }
+      measures: nextMeasures,
+      sync: { 
+        ...project.sync, 
+        anchors: nextAnchors 
+      }
     });
   }, [project, onUpdateProject]);
 
